@@ -1,0 +1,87 @@
+name: krushi_mitra
+description: "Krushi Mitra - AI-Powered Farmer Assistant for Indian Farmers"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_storage: ^12.0.0
+  firebase_messaging: ^15.0.0
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Networking
+  dio: ^5.4.3
+  flutter_dotenv: ^5.1.0
+
+  # UI & Animations
+  google_fonts: ^6.2.1
+  fl_chart: ^0.68.0
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
+  cached_network_image: ^3.3.1
+  smooth_page_indicator: ^1.1.0
+
+  # Device & Permissions
+  image_picker: ^1.0.7
+  geolocator: ^13.0.2
+  speech_to_text: ^7.0.0
+  permission_handler: ^11.3.1
+  camera: ^0.11.0
+  flutter_tts: ^4.0.0
+
+  # Storage & Database
+  shared_preferences: ^2.3.2
+  sqflite: ^2.3.3
+
+  # Utils
+  connectivity_plus: ^6.0.5
+  intl: ^0.19.0
+  easy_localization: ^3.0.7
+  http: ^1.2.0
+  url_launcher: ^6.3.1
+  path_provider: ^2.1.4
+  image: ^4.2.0
+  uuid: ^4.4.2
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.12
+  riverpod_generator: ^2.4.3
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - .env
+    - assets/images/
+    - assets/lottie/
+    - assets/icons/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
