@@ -2,12 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/error_widget.dart';
-import '../../../../shared/widgets/loading_widget.dart';
-import '../../models/crop_diagnosis.dart';
-import '../../services/ai_service.dart';
+import '../../../../core/services/ai_service.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CropDoctorScreen extends StatefulWidget {
@@ -57,7 +52,6 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
     });
 
     try {
-      // In a real app, you would pass the selected language here
       final result = await _aiService.analyzeCropImage(_selectedImage!, 'hi');
       setState(() {
         _diagnosisResult = result;
@@ -85,39 +79,37 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: AppStrings.cropDoctorHi,
+      backgroundColor: AppColors.backgroundStone,
+      appBar: AppBar(
+        title: const Text('Crop Doctor'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
         actions: [
           if (_selectedImage != null && !_isAnalyzing)
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
               onPressed: _reset,
-              tooltip: 'Reset',
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_selectedImage == null) ...[
-                _buildImagePicker(),
-              ] else if (_isAnalyzing) ...[
-                _buildAnalysisInProgress(),
-              ] else if (_errorMessage != null) ...[
-                ErrorDisplayWidget(
-                  message: _errorMessage!,
-                  onRetry: _analyzeImage,
-                ),
-              ] else if (_diagnosisResult != null) ...[
-                _buildResultCard(_diagnosisResult!),
-              ] else ...[
-                _buildImagePreview(),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_selectedImage == null) ...[
+              _buildImagePicker(),
+            ] else if (_isAnalyzing) ...[
+              _buildAnalysisInProgress(),
+            ] else if (_errorMessage != null) ...[
+              _buildErrorDisplay(),
+            ] else if (_diagnosisResult != null) ...[
+              _buildResultCard(_diagnosisResult!),
+            ] else ...[
+              _buildImagePreview(),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -125,44 +117,69 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
 
   Widget _buildImagePicker() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 48),
-        Icon(
-          Icons.energy_savings_leaf,
-          size: 80,
-          color: AppColors.primaryLight,
+        const SizedBox(height: 40),
+        Container(
+          height: 240,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: AppColors.primaryContainer.withOpacity(0.1),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_a_photo_outlined,
+                size: 64,
+                color: AppColors.primaryGreen.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Upload Crop Photo',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         Text(
-          AppStrings.uploadImageHi,
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Take a clear photo of the affected crop area',
-          style: Theme.of(context).textTheme.bodyMedium,
+          'Our AI will analyze symptoms and suggest treatments within seconds.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            ElevatedButton.icon(
-              onPressed: () => _pickImage(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Camera'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _pickImage(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: const Text('Take Photo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                ),
               ),
             ),
-            OutlinedButton.icon(
-              onPressed: () => _pickImage(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Gallery'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            const SizedBox(width: 16),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickImage(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('Gallery'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  side: BorderSide(color: AppColors.primaryGreen.withOpacity(0.3)),
+                ),
               ),
             ),
           ],
@@ -175,10 +192,10 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           child: Image.file(
             _selectedImage!,
-            height: 300,
+            height: 350,
             width: double.infinity,
             fit: BoxFit.cover,
           ),
@@ -186,10 +203,11 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
         const SizedBox(height: 32),
         ElevatedButton.icon(
           onPressed: _analyzeImage,
-          icon: const Icon(Icons.analytics),
-          label: const Text(AppStrings.diagnoseHi, style: TextStyle(fontSize: 18)),
+          icon: const Icon(Icons.psychology_outlined),
+          label: const Text('Analyze Findings'),
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 56),
+            minimumSize: const Size(double.infinity, 64),
+            backgroundColor: AppColors.primaryGreen,
           ),
         ),
       ],
@@ -198,28 +216,35 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
 
   Widget _buildAnalysisInProgress() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 48),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(
-            _selectedImage!,
-            height: 200,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            color: Colors.white.withOpacity(0.5),
-            colorBlendMode: BlendMode.modulate,
-          ),
+        const SizedBox(height: 40),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Image.file(
+                _selectedImage!,
+                height: 300,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                color: Colors.black.withOpacity(0.4),
+                colorBlendMode: BlendMode.darken,
+              ),
+            ),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
         ),
         const SizedBox(height: 32),
-        const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-        const SizedBox(height: 24),
         Text(
-          AppStrings.analyzingHi,
-          style: Theme.of(context).textTheme.headlineSmall,
+          'Scanning issues...',
+          style: Theme.of(context).textTheme.displaySmall,
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Our AI is identifying the crop and potential diseases.',
           textAlign: TextAlign.center,
         ),
       ],
@@ -228,132 +253,152 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
 
   Widget _buildResultCard(CropDiagnosis result) {
     final bool isHealthy = result.isHealthy;
-    final Color statusColor = isHealthy ? AppColors.healthyGreen : AppColors.diseaseRed;
+    final Color statusColor = isHealthy ? AppColors.success : AppColors.error;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              result.cropName,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                isHealthy ? 'Healthy' : 'Diseased',
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(24),
           child: Image.file(
             _selectedImage!,
-            height: 200,
+            height: 220,
             width: double.infinity,
             fit: BoxFit.cover,
           ),
         ),
         const SizedBox(height: 24),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      result.cropName,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Chip(
-                      label: Text(
-                        isHealthy ? AppStrings.cropHealthy : AppStrings.cropDiseased,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                      backgroundColor: statusColor,
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                if (!isHealthy) ...[
-                  _buildResultRow('Disease:', result.diseaseName, color: statusColor, isBold: true),
-                  const SizedBox(height: 8),
-                  _buildResultRow('Severity:', result.severity),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader('Symptoms', Icons.visibility),
-                  Text(result.symptoms),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader('Causes', Icons.info_outline),
-                  Text(result.causes),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader('Organic Treatment', Icons.eco),
-                  Text(result.treatmentOrganic),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader('Chemical Treatment', Icons.science),
-                  Text(result.treatmentChemical),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader('Prevention', Icons.shield),
-                  Text(result.prevention),
-                ] else ...[
-                  const Text(
-                    'Your crop looks healthy based on this image. Keep up the good work! Make sure to continue regular monitoring.',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
-              ],
+        if (!isHealthy) ...[
+          _buildInfoSection('Diagnosis', result.diseaseName, Icons.bug_report_outlined, statusColor),
+          _buildInfoSection('Severity', result.severity, Icons.analytics_outlined, AppColors.tertiarySaffron),
+          const SizedBox(height: 16),
+          _buildDetailCard('Symptoms', result.symptoms, Icons.visibility_outlined),
+          _buildDetailCard('Causes', result.causes, Icons.info_outline),
+          _buildDetailCard('Solution (Organic)', result.treatmentOrganic, Icons.eco_outlined, isSpecial: true),
+          _buildDetailCard('Solution (Chemical)', result.treatmentChemical, Icons.science_outlined),
+          _buildDetailCard('Prevention', result.prevention, Icons.shield_outlined),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(24),
             ),
+            child: const Text(
+              'Your crop appears to be in excellent condition. Maintain regular hydration and monitoring.',
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+          ),
+        ],
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.chat_bubble_outline),
+          label: const Text('Discuss with AI Assistant'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryDark,
           ),
         ),
         const SizedBox(height: 24),
-        OutlinedButton.icon(
-          onPressed: () {
-            // Navigate to Chatbot with context
-          },
-          icon: const Icon(Icons.chat),
-          label: const Text(AppStrings.askAiMore),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 50),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildResultRow(String label, String value, {Color? color, bool isBold = false}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: color ?? AppColors.textPrimary,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              fontSize: isBold ? 16 : 14,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildInfoSection(String label, String value, IconData icon, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
+          Icon(icon, size: 20, color: color),
           const SizedBox(width: 8),
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailCard(String title, String content, IconData icon, {bool isSpecial = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isSpecial ? AppColors.surfaceContainerLow : AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.textHint.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.primaryGreen),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryDark,
+            content,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.5,
+              fontSize: 14,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorDisplay() {
+    return Column(
+      children: [
+        const SizedBox(height: 40),
+        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+        const SizedBox(height: 24),
+        Text(
+          'Analysis Failed',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 12),
+        Text(_errorMessage!, textAlign: TextAlign.center),
+        const SizedBox(height: 32),
+        ElevatedButton(
+          onPressed: _analyzeImage,
+          child: const Text('Retry Analysis'),
+        ),
+      ],
     );
   }
 }

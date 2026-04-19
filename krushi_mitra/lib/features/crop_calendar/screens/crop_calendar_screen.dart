@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
 
 class CropCalendarScreen extends StatelessWidget {
   const CropCalendarScreen({super.key});
@@ -17,32 +16,43 @@ class CropCalendarScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Crop Calendar (फसल कैलेंडर)'),
+      backgroundColor: AppColors.backgroundStone,
+      appBar: AppBar(
+        title: const Text('Crop Calendar'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.primaryContainer,
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              borderRadius: BorderRadius.circular(32),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Soybean (JS 335)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark)),
-                    Text('Kharif Season', style: TextStyle(color: AppColors.textSecondary)),
+                    Text('Soybean (JS 335)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                    Text('Kharif Season', style: TextStyle(color: Colors.white70)),
                   ],
                 ),
-                OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Change Crop'),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(12)),
+                  child: const Text('Change', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               itemCount: months.length,
               itemBuilder: (context, index) {
                 final monthData = months[index];
@@ -92,60 +102,60 @@ class TimelineTile extends StatelessWidget {
             width: 80,
             child: Column(
               children: [
-                if (!isFirst) Container(height: 20, width: 2, color: isActive ? AppColors.primary : AppColors.divider),
+                if (!isFirst) Container(height: 20, width: 2, color: isActive ? AppColors.primaryGreen : AppColors.divider),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.primary : AppColors.surfaceVariant,
+                    color: isActive ? AppColors.primaryGreen : AppColors.surfaceWhite,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     month,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
+                      fontSize: 12,
                       color: isActive ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                 ),
-                if (!isLast) Expanded(child: Container(width: 2, color: isActive ? AppColors.primary : AppColors.divider)),
+                if (!isLast) Expanded(child: Container(width: 2, color: isActive ? AppColors.primaryGreen : AppColors.divider)),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           // Content Card
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              child: Card(
-                elevation: isActive ? 4 : 1,
-                color: isActive ? Colors.white : AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: isActive ? AppColors.primaryLight : Colors.transparent),
+              padding: const EdgeInsets.only(bottom: 32.0),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(32),
+                  border: isActive ? Border.all(color: AppColors.primaryGreen.withOpacity(0.3), width: 1) : null,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(phase, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 12),
-                      ...tasks.map((task) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 4.0),
-                                  child: Icon(Icons.circle, size: 8, color: AppColors.accent),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(task)),
-                              ],
-                            ),
-                          )),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(phase, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 16),
+                    ...tasks.map((task) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(child: Text(task, style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.4))),
+                            ],
+                          ),
+                        )),
+                  ],
                 ),
               ),
             ),

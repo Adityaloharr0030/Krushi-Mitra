@@ -1,316 +1,426 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_strings.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../core/services/ai_service.dart';
-import '../../models/message_model.dart';
-// import 'package:speech_to_text/speech_to_text.dart' as stt; // Intentionally omitting full implementation to save space
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/weather_provider.dart';
+import '../../../core/providers/chatbot_provider.dart';
 
-class ChatbotScreen extends StatefulWidget {
+class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 
   @override
-  State<ChatbotScreen> createState() => _ChatbotScreenState();
+  ConsumerState<ChatbotScreen> createState() => _ChatbotScreenState();
 }
 
-class _ChatbotScreenState extends State<ChatbotScreen> {
-  final TextEditingController _textController = TextEditingController();
+class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
+  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final AIService _aiService = AIService();
-  final List<MessageModel> _messages = [];
-  bool _isTyping = false;
-  // late stt.SpeechToText _speech;
-  // bool _isListening = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // _speech = stt.SpeechToText();
-    _messages.add(MessageModel(
-      id: const Uuid().v4(),
-      content: 'नमस्ते! मैं कृषि मित्र हूँ। आज मैं खेती में आपकी कैसे मदद कर सकता हूँ?',
-      isUser: false,
-      timestamp: DateTime.now(),
-    ));
-  }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
-
-  Future<void> _handleSubmitted(String text) async {
-    if (text.trim().isEmpty) return;
-
-    _textController.clear();
-    
-    final userMessage = MessageModel(
-      id: const Uuid().v4(),
-      content: text,
-      isUser: true,
-      timestamp: DateTime.now(),
-    );
-
-    setState(() {
-      _messages.add(userMessage);
-      _isTyping = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-    try {
-      final history = _messages
-          .where((m) => m.id != userMessage.id) // Exclude current to avoid duplication context
-          .take(10) // Limit context
-          .map((m) => m.toJson())
-          .toList();
-
-      final response = await _aiService.chat(history, text, 'hi'); // Assuming Hindi mode for now
-
-      final aiMessage = MessageModel(
-        id: const Uuid().v4(),
-        content: response,
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-
-      setState(() {
-        _messages.add(aiMessage);
-      });
-    } catch (e) {
-      final errorMessage = MessageModel(
-        id: const Uuid().v4(),
-        content: 'क्षमस्व, मुझे उत्तर प्राप्त करने में समस्या हो रही है। कृपया अपना इंटरनेट कनेक्शन जांच लें।',
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-      setState(() {
-        _messages.add(errorMessage);
-      });
-      print('Chat error: $e');
-    } finally {
-      setState(() {
-        _isTyping = false;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final chatState = ref.watch(chatProvider);
+    
+    // Auto scroll when new message arrives
+    ref.listen(chatProvider, (previous, next) {
+      if (previous?.messages.length != next.messages.length) {
+        _scrollToBottom();
+      }
+    });
+
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: AppStrings.aiChatHi,
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        // ... (title and online indicator remain same)
+        backgroundColor: AppColors.surfaceContainerLow,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🤖 Krushi AI',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Online',
+                  style: GoogleFonts.manrope(
+                    fontSize: 11,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.onSurfaceVariant),
+            onPressed: () => ref.read(chatProvider.notifier).clearChat(),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              'EN',
+              style: GoogleFonts.manrope(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          _buildSuggestedQuestions(),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              padding: const EdgeInsets.all(20),
+              itemCount: chatState.messages.length + (chatState.isTyping ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == _messages.length && _isTyping) {
+                if (index == chatState.messages.length) {
                   return _buildTypingIndicator();
                 }
-                final message = _messages[index];
-                return _buildMessageBubble(message);
+                final msg = chatState.messages[index];
+                return msg.isUser 
+                  ? _buildUserMessage(msg.text, 'Just now')
+                  : _buildAIMessage(msg.text, 'Now');
               },
             ),
           ),
-          const Divider(height: 1),
-          _buildTextComposer(),
+          _buildInputArea(chatState.isTyping),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestedQuestions() {
-    final questions = [
-      AppStrings.suggestedQ1,
-      AppStrings.suggestedQ2,
-      AppStrings.suggestedQ3,
-    ];
-
-    if (_messages.length > 1) return const SizedBox.shrink(); // Only show initially
-
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(top: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: questions.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ActionChip(
-              label: Text(questions[index]),
-              onPressed: () => _handleSubmitted(questions[index]),
-              backgroundColor: AppColors.primaryContainer,
-              labelStyle: const TextStyle(color: AppColors.primaryDark),
+  Widget _buildAIMessage(String text, String time) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHighest.withOpacity(0.6),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
             ),
-          );
-        },
+            child: Text(
+              text,
+              style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              'AI • $time',
+              style: GoogleFonts.manrope(fontSize: 10, color: AppColors.onSurfaceVariant),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMessageBubble(MessageModel message) {
-    final bool isMe = message.isUser;
-    
-    return Container(
-      margin: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+  Widget _buildUserMessage(String text, String time) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMe) ...[
-            const CircleAvatar(
-              backgroundColor: AppColors.primary,
-              radius: 16,
-              child: Icon(Icons.psychology, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isMe ? AppColors.primaryContainer : Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isMe ? 16 : 0),
-                  bottomRight: Radius.circular(isMe ? 0 : 16),
-                ),
-                border: Border.all(
-                  color: isMe ? AppColors.primaryLight : AppColors.divider,
-                ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: AppTheme.goldGradient,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
-              child: Text(
-                message.content,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.harvestGold.withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                color: AppColors.onTertiary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          if (isMe) const SizedBox(width: 32), // Add spacing for avatar size consistency
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Text(
+              'Today $time',
+              style: GoogleFonts.manrope(fontSize: 10, color: AppColors.onSurfaceVariant),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAIDetailedResponse() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHighest.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                Text(
+                  'Patti Peeli = Nitrogen Ki Kami',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildBulletPoint('Urea 5kg/acre daalein'),
+            _buildBulletPoint('Market price: ₹280/bag across Mandis'),
+            _buildBulletPoint('Next 3 days suitable for spray'),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildQuickChip('Organic Solution'),
+                  _buildQuickChip('Chemical Fix'),
+                  _buildQuickChip('Ask More'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBulletPoint(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('•', style: TextStyle(color: AppColors.primary, fontSize: 18)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickChip(String label) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.manrope(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+        ),
       ),
     );
   }
 
   Widget _buildTypingIndicator() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const CircleAvatar(
-            backgroundColor: AppColors.primaryLight,
-            radius: 16,
-            child: Icon(Icons.psychology, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ...List.generate(3, (i) => Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(right: 4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+              color: AppColors.onSurfaceVariant.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+          )),
+          const SizedBox(width: 8),
+          Text('Krushi AI is thinking...', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputArea(bool isTyping) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        border: Border(top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.2))),
+      ),
+      child: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  _buildSuggestionChip('Wheat yellow leaves?', isTyping),
+                  ref.watch(weatherProvider).maybeWhen(
+                    data: (w) => _buildSuggestionChip('Weather in ${w.location}', isTyping),
+                    orElse: () => _buildSuggestionChip('Weather Today', isTyping),
+                  ),
+                  _buildSuggestionChip('Urea price', isTyping),
+                  _buildSuggestionChip('Cotton pests', isTyping),
+                ],
               ),
-              border: Border.all(color: AppColors.divider),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildDot(0),
-                const SizedBox(width: 4),
-                _buildDot(1),
-                const SizedBox(width: 4),
-                _buildDot(2),
-              ],
-            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: TextField(
+                      controller: _messageController,
+                      enabled: !isTyping,
+                      style: GoogleFonts.manrope(color: AppColors.onSurface, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Type your question...',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintStyle: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
+                      ),
+                      onSubmitted: (val) => _handleSend(),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: isTyping ? null : _handleSend,
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: isTyping ? AppColors.surfaceContainerHighest : AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isTyping ? Icons.hourglass_empty : Icons.send_rounded, 
+                    color: isTyping ? AppColors.onSurfaceVariant : AppColors.onPrimary, 
+                    size: 24
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDot(int index) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, double value, child) {
-        return Opacity(
-          opacity: (value + (index * 0.3)) % 1,
-          child: Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      },
-      onEnd: () {
-        setState(() {}); // Trigger rebuild to loop animation
-      },
-    );
+  void _handleSend() {
+    final text = _messageController.text;
+    if (text.isEmpty) return;
+    _messageController.clear();
+    ref.read(chatProvider.notifier).sendMessage(text, 'en');
   }
 
-  Widget _buildTextComposer() {
-    return SafeArea(
+  Widget _buildSuggestionChip(String label, bool isTyping) {
+    return GestureDetector(
+      onTap: isTyping ? null : () {
+        _messageController.text = label;
+        _handleSend();
+      },
       child: Container(
-        color: AppColors.surface,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.mic, color: AppColors.primary),
-              onPressed: () {
-                // Implement Voice Recording
-              },
-            ),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                textInputAction: TextInputAction.send,
-                onSubmitted: _handleSubmitted,
-                decoration: InputDecoration(
-                  hintText: AppStrings.typeMessageHi,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24.0),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceVariant,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            FloatingActionButton(
-              mini: true,
-              backgroundColor: AppColors.primary,
-              elevation: 0,
-              onPressed: () => _handleSubmitted(_textController.text),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
-            ),
-          ],
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.manrope(
+            fontSize: 12,
+            color: AppColors.onSurface,
+          ),
         ),
       ),
     );

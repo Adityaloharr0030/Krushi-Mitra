@@ -47,15 +47,18 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundStone,
       appBar: AppBar(
         title: const Text('Government Schemes'),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: Column(
         children: [
           _buildSearchBar(),
           _buildFilterChips(),
+          const SizedBox(height: 16),
           Expanded(child: _buildSchemeList()),
         ],
       ),
@@ -64,17 +67,18 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: TextField(
         decoration: InputDecoration(
-          hintText: 'Search schemes by keyword...',
-          prefixIcon: const Icon(Icons.search),
+          hintText: 'Search schemes...',
+          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textHint),
           filled: true,
           fillColor: AppColors.surfaceWhite,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
           ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );
@@ -82,10 +86,10 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
 
   Widget _buildFilterChips() {
     return SizedBox(
-      height: 50,
+      height: 48,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: _filters.length,
         itemBuilder: (context, index) {
           final filter = _filters[index];
@@ -95,14 +99,21 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
             child: ChoiceChip(
               label: Text(filter),
               selected: isSelected,
-              selectedColor: AppColors.secondaryAmber,
               onSelected: (selected) {
                 if (selected) {
-                  setState(() {
-                    _selectedFilter = filter;
-                  });
+                  setState(() => _selectedFilter = filter);
                 }
               },
+              backgroundColor: AppColors.surfaceWhite,
+              selectedColor: AppColors.primaryGreen,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide.none),
+              showCheckmark: false,
+              elevation: 0,
+              pressElevation: 0,
             ),
           );
         },
@@ -112,32 +123,37 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
 
   Widget _buildSchemeList() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: _mockSchemes.length,
       itemBuilder: (context, index) {
         final scheme = _mockSchemes[index];
         final daysLeft = scheme.deadline.difference(DateTime.now()).inDays;
         
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(32),
+          ),
           child: InkWell(
+            borderRadius: BorderRadius.circular(32),
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => SchemeDetailScreen(scheme: scheme),
-                ),
+                MaterialPageRoute(builder: (context) => SchemeDetailScreen(scheme: scheme)),
               );
             },
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.account_balance, size: 40, color: AppColors.primaryGreen),
+                      CircleAvatar(
+                        backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
+                        child: const Icon(Icons.account_balance_outlined, color: AppColors.primaryGreen),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -145,51 +161,44 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
                           children: [
                             Text(
                               scheme.name,
-                              style: Theme.of(context).textTheme.titleLarge,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                             ),
-                            const SizedBox(height: 4),
                             Text(
                               scheme.benefitAmount,
-                              style: const TextStyle(
-                                color: AppColors.primaryGreen,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
                     scheme.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(color: AppColors.textSecondary, height: 1.5),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: daysLeft <= 7 ? AppColors.error.withOpacity(0.1) : AppColors.primaryGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: daysLeft <= 7 ? AppColors.error : AppColors.primaryGreen,
-                          ),
+                          color: daysLeft <= 7 ? Colors.orange.withOpacity(0.1) : AppColors.backgroundStone,
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          'Deadline: $daysLeft days left',
+                          '$daysLeft days left to apply',
                           style: TextStyle(
-                            color: daysLeft <= 7 ? AppColors.error : AppColors.primaryGreen,
+                            color: daysLeft <= 7 ? Colors.orange : AppColors.textSecondary,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      const Icon(Icons.arrow_forward_rounded, size: 20, color: AppColors.textHint),
                     ],
                   ),
                 ],

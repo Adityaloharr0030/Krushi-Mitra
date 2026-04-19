@@ -8,6 +8,9 @@ class ApiConstants {
   static const String claudeApiVersion = '2023-06-01';
   static const int claudeMaxTokens = 1500;
   static const int claudeMaxTokensChat = 800;
+  
+  // Google Gemini API
+  static const String geminiModel = 'gemini-1.5-flash';
 
   // OpenWeatherMap API
   static const String weatherBaseUrl = 'https://api.openweathermap.org/data/2.5';

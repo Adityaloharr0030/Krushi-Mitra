@@ -33,7 +33,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              Center(
+              const Center(
                 child: Icon(
                   Icons.agriculture,
                   size: 80,

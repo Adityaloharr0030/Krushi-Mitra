@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class CalculatorScreen extends StatelessWidget {
@@ -10,14 +9,18 @@ class CalculatorScreen extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        backgroundColor: AppColors.backgroundStone,
         appBar: AppBar(
           title: const Text('Agri Calculators'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           centerTitle: true,
           bottom: const TabBar(
             isScrollable: true,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: AppColors.accent,
+            labelColor: AppColors.primaryGreen,
+            unselectedLabelColor: AppColors.textHint,
+            indicatorColor: AppColors.primaryGreen,
+            indicatorWeight: 3,
             tabs: [
               Tab(text: 'Fertilizer'),
               Tab(text: 'Seed Rate'),
@@ -55,18 +58,13 @@ class _FertilizerCalculatorState extends State<_FertilizerCalculator> {
     final area = double.tryParse(_areaController.text);
     if (area == null || area <= 0) return;
 
-    // Simple mock calculation based on standard recommendations per acre
     double urea = 0, dap = 0, mop = 0;
     
     switch (_crop) {
-      case 'Wheat':
-        urea = 45; dap = 50; mop = 20; break;
-      case 'Rice':
-        urea = 50; dap = 40; mop = 25; break;
-      case 'Cotton':
-        urea = 60; dap = 50; mop = 30; break;
-      case 'Soybean':
-        urea = 20; dap = 60; mop = 20; break;
+      case 'Wheat': urea = 45; dap = 50; mop = 20; break;
+      case 'Rice': urea = 50; dap = 40; mop = 25; break;
+      case 'Cotton': urea = 60; dap = 50; mop = 30; break;
+      case 'Soybean': urea = 20; dap = 60; mop = 20; break;
     }
 
     setState(() {
@@ -81,51 +79,61 @@ class _FertilizerCalculatorState extends State<_FertilizerCalculator> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: _crop,
-                    decoration: const InputDecoration(labelText: 'Select Crop'),
-                    items: ['Wheat', 'Rice', 'Cotton', 'Soybean']
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (val) => setState(() => _crop = val!),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWhite,
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Calculator Input', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 24),
+                DropdownButtonFormField<String>(
+                  initialValue: _crop,
+                  decoration: const InputDecoration(labelText: 'Select Crop'),
+                  items: ['Wheat', 'Rice', 'Cotton', 'Soybean']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _crop = val!),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: _areaController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Land Area',
+                    suffixText: 'Acres',
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _areaController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Land Area',
-                      suffixText: 'Acres',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
                     onPressed: _calculate,
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 45)),
-                    child: const Text('Calculate Needs'),
-                  )
-                ],
-              ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Calculate Needs', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                )
+              ],
             ),
           ),
           if (_result != null) ...[
-            const SizedBox(height: 24),
-            const Text('Required Fertilizers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _buildResultRow('Urea (Nitrogen)', _result!['Urea']!, Colors.grey.shade300),
-            const SizedBox(height: 8),
+            const SizedBox(height: 40),
+            const Text('Required Fertilizers', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            _buildResultRow('Urea (Nitrogen)', _result!['Urea']!, Colors.grey.shade400),
             _buildResultRow('DAP (Phosphorus)', _result!['DAP']!, Colors.grey.shade800),
-            const SizedBox(height: 8),
             _buildResultRow('MOP (Potassium)', _result!['MOP']!, Colors.red.shade200),
           ]
         ],
@@ -134,12 +142,27 @@ class _FertilizerCalculatorState extends State<_FertilizerCalculator> {
   }
 
   Widget _buildResultRow(String name, double amount, Color color) {
-    return Card(
-      elevation: 1,
-      child: ListTile(
-        leading: CircleAvatar(backgroundColor: color, radius: 16),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        trailing: Text('\${amount.toStringAsFixed(1)} kg', style: const TextStyle(fontSize: 18, color: AppColors.primary)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(backgroundColor: color.withOpacity(0.2), child: Icon(Icons.science_rounded, color: color, size: 20)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${amount.toStringAsFixed(1)} kg', style: const TextStyle(color: AppColors.primaryGreen, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

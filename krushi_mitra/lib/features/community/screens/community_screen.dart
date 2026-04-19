@@ -42,95 +42,118 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundStone,
       appBar: AppBar(
-        title: const Text('Community Forum'),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        title: const Text('Community'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         itemCount: _posts.length,
         itemBuilder: (context, index) {
-          return _buildPostCard(_posts[index]);
+          return _buildPostEditorial(_posts[index]);
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const CreatePostScreen()));
         },
-        backgroundColor: AppColors.secondaryAmber,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.primaryGreen,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('New Post', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  Widget _buildPostCard(Post post) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-                  child: Text(post.farmerName[0], style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(post.farmerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(DateFormat('MMM d, h:mm a').format(post.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                if (post.farmerName == 'Suresh Kumar') // Mock expert verification
-                   const Chip(
-                    label: Text('Expert', style: TextStyle(fontSize: 10, color: Colors.white)),
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.zero,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(post.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(post.content),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (post.cropTag != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Chip(label: Text(post.cropTag!), backgroundColor: AppColors.surfaceGreenLight),
-                  ),
-                if (post.problemTag != null)
-                  Chip(label: Text(post.problemTag!), backgroundColor: Colors.red.shade50),
-              ],
-            ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+  Widget _buildPostEditorial(Post post) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(32),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
+                child: Text(post.farmerName[0], style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(icon: const Icon(Icons.thumb_up_alt_outlined, size: 20), onPressed: () {}),
-                    Text('${post.likes}'),
-                    const SizedBox(width: 16),
-                    IconButton(icon: const Icon(Icons.comment_outlined, size: 20), onPressed: () {}),
-                    Text('${post.commentsCount}'),
+                    Text(post.farmerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(DateFormat('MMM d').format(post.createdAt), style: const TextStyle(color: AppColors.textHint, fontSize: 12)),
                   ],
                 ),
-                IconButton(icon: const Icon(Icons.share, size: 20), onPressed: () {}),
-              ],
-            )
-          ],
-        ),
+              ),
+              if (post.farmerName == 'Suresh Kumar')
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                  child: const Text('EXPERT', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(post.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.3)),
+          const SizedBox(height: 12),
+          Text(post.content, style: TextStyle(color: AppColors.textSecondary, height: 1.5)),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              if (post.cropTag != null)
+                _buildTag(post.cropTag!, AppColors.primaryGreen),
+              if (post.problemTag != null)
+                _buildTag(post.problemTag!, AppColors.error),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _buildStat(Icons.thumb_up_outlined, post.likes.toString()),
+                  const SizedBox(width: 20),
+                  _buildStat(Icons.mode_comment_outlined, post.commentsCount.toString()),
+                ],
+              ),
+              const Icon(Icons.share_outlined, size: 20, color: AppColors.textHint),
+            ],
+          )
+        ],
       ),
+    );
+  }
+
+  Widget _buildTag(String label, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildStat(IconData icon, String count) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.textHint),
+        const SizedBox(width: 6),
+        Text(count, style: const TextStyle(color: AppColors.textHint, fontSize: 13, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }

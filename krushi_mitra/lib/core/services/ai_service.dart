@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../constants/api_constants.dart';
 
@@ -83,7 +82,8 @@ class AIService {
   factory AIService() => _instance;
   AIService._internal();
 
-  late final Dio _dio;
+  late final GenerativeModel _model;
+  late final GenerativeModel _visionModel;
 
   static const String _systemPrompt = '''You are Krushi Mitra, an expert agricultural assistant for Indian farmers. 
 You have deep knowledge of:
@@ -106,27 +106,16 @@ ALWAYS:
 - Suggest both organic and chemical solutions when applicable''';
 
   void initialize() {
-    _dio = Dio(BaseOptions(
-      baseUrl: ApiConstants.claudeBaseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 60),
-      headers: {
-        'anthropic-version': ApiConstants.claudeApiVersion,
-        'content-type': 'application/json',
-      },
-    ));
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    
+    _model = GenerativeModel(
+      model: ApiConstants.geminiModel,
+      apiKey: apiKey,
+      systemInstruction: Content.system(_systemPrompt),
+    );
 
-    // Add logging interceptor in debug mode
-    _dio.interceptors.add(LogInterceptor(
-      request: false,
-      responseBody: false,
-      error: true,
-    ));
-  }
-
-  Map<String, String> _getAuthHeaders() {
-    final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
-    return {'x-api-key': apiKey};
+    // Using the same model for vision as Gemini 1.5 Flash supports both
+    _visionModel = _model;
   }
 
   /// Analyze a crop image for disease detection
@@ -134,67 +123,48 @@ ALWAYS:
     File imageFile,
     String language,
   ) async {
-    final Uint8List compressed = await _compressImage(imageFile);
-    final String base64Image = base64Encode(compressed);
-
-    final languageInstruction = _getLanguageInstruction(language);
-
-    final prompt = '''Analyze this crop photo carefully. Respond ONLY in valid JSON format.
-
-$languageInstruction
-
-Provide your analysis as JSON with these exact keys:
-{
-  "crop_name": "Name of the crop identified",
-  "health_status": "healthy OR diseased OR deficient",
-  "disease_name": "Disease/pest/deficiency name (None if healthy)",
-  "severity": "low OR medium OR high OR severe",
-  "confidence": 85,
-  "symptoms": "Visible symptoms described simply",
-  "causes": "What causes this issue",
-  "treatment_organic": "Organic/natural treatment with quantities",
-  "treatment_chemical": "Chemical treatment with product names and dosage",
-  "prevention": "How to prevent this in future"
-}
-
-Do NOT include markdown formatting. Return pure JSON only.''';
+    final bytes = await imageFile.readAsBytes();
+    final content = [
+      Content.multi([
+        TextPart(_getAnalysisPrompt(language)),
+        DataPart('image/jpeg', bytes),
+      ])
+    ];
 
     try {
-      final response = await _dio.post(
-        ApiConstants.claudeMessagesEndpoint,
-        options: Options(headers: _getAuthHeaders()),
-        data: {
-          'model': ApiConstants.claudeModel,
-          'max_tokens': ApiConstants.claudeMaxTokens,
-          'system': _systemPrompt,
-          'messages': [
-            {
-              'role': 'user',
-              'content': [
-                {
-                  'type': 'image',
-                  'source': {
-                    'type': 'base64',
-                    'media_type': 'image/jpeg',
-                    'data': base64Image,
-                  }
-                },
-                {'type': 'text', 'text': prompt}
-              ]
-            }
-          ]
-        },
-      );
-
-      final content = response.data['content'][0]['text'] as String;
-      final jsonStr = _extractJson(content);
+      final response = await _visionModel.generateContent(content);
+      final text = response.text;
+      if (text == null) throw Exception('No response from AI');
+      
+      final jsonStr = _extractJson(text);
       final Map<String, dynamic> jsonData = json.decode(jsonStr);
       return CropDiagnosis.fromJson(jsonData);
-    } on DioException catch (e) {
-      throw _handleDioError(e);
     } catch (e) {
       throw Exception('Failed to analyze crop image: $e');
     }
+  }
+
+  String _getAnalysisPrompt(String language) {
+    final languageInstruction = _getLanguageInstruction(language);
+    return '''Analyze this crop photo carefully. 
+    
+    $languageInstruction
+    
+    Provide your analysis as JSON with these exact keys:
+    {
+      "crop_name": "Name of the crop identified",
+      "health_status": "healthy OR diseased OR deficient",
+      "disease_name": "Disease/pest/deficiency name (None if healthy)",
+      "severity": "low OR medium OR high OR severe",
+      "confidence": 85,
+      "symptoms": "Visible symptoms described simply",
+      "causes": "What causes this issue",
+      "treatment_organic": "Organic/natural treatment with quantities",
+      "treatment_chemical": "Chemical treatment with product names and dosage",
+      "prevention": "How to prevent this in future"
+    }
+    
+    Do NOT include markdown formatting. Return pure JSON only.''';
   }
 
   /// Send a chat message to the AI
@@ -204,28 +174,19 @@ Do NOT include markdown formatting. Return pure JSON only.''';
     String language,
   ) async {
     final languageInstruction = _getLanguageInstruction(language);
-    final fullSystem = '$_systemPrompt\n\n$languageInstruction';
-
-    final messages = [
-      ...history,
-      {'role': 'user', 'content': userMessage}
-    ];
+    
+    final chatHistory = history.map((m) {
+      return m['role'] == 'user' 
+          ? Content.text(m['content'] as String)
+          : Content.model([TextPart(m['content'] as String)]);
+    }).toList();
 
     try {
-      final response = await _dio.post(
-        ApiConstants.claudeMessagesEndpoint,
-        options: Options(headers: _getAuthHeaders()),
-        data: {
-          'model': ApiConstants.claudeModel,
-          'max_tokens': ApiConstants.claudeMaxTokensChat,
-          'system': fullSystem,
-          'messages': messages,
-        },
-      );
-
-      return response.data['content'][0]['text'] as String;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+      final chat = _model.startChat(history: chatHistory);
+      final response = await chat.sendMessage(Content.text('$languageInstruction\n\n$userMessage'));
+      return response.text ?? 'I am sorry, I could not process that.';
+    } catch (e) {
+      throw Exception('Chat error: $e');
     }
   }
 
@@ -257,21 +218,10 @@ ${_getLanguageInstruction(language)}
 Keep the response practical and simple. Use bullet points.''';
 
     try {
-      final response = await _dio.post(
-        ApiConstants.claudeMessagesEndpoint,
-        options: Options(headers: _getAuthHeaders()),
-        data: {
-          'model': ApiConstants.claudeModel,
-          'max_tokens': 600,
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-        },
-      );
-
-      return response.data['content'][0]['text'] as String;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? 'Eligibility check failed.';
+    } catch (e) {
+      throw Exception('Failed to check eligibility: $e');
     }
   }
 
@@ -298,21 +248,10 @@ The tip should be:
 ${_getLanguageInstruction(language)}''';
 
     try {
-      final response = await _dio.post(
-        ApiConstants.claudeMessagesEndpoint,
-        options: Options(headers: _getAuthHeaders()),
-        data: {
-          'model': ApiConstants.claudeModel,
-          'max_tokens': 200,
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-        },
-      );
-
-      return response.data['content'][0]['text'] as String;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? 'Tip generation failed.';
+    } catch (e) {
+      throw Exception('Failed to get farming tip: $e');
     }
   }
 
@@ -348,23 +287,14 @@ ${_getLanguageInstruction(language)}
 Return pure JSON only, no markdown.''';
 
     try {
-      final response = await _dio.post(
-        ApiConstants.claudeMessagesEndpoint,
-        options: Options(headers: _getAuthHeaders()),
-        data: {
-          'model': ApiConstants.claudeModel,
-          'max_tokens': 800,
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-        },
-      );
-
-      final content = response.data['content'][0]['text'] as String;
-      final jsonStr = _extractJson(content);
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text;
+      if (text == null) throw Exception('No response from AI');
+      
+      final jsonStr = _extractJson(text);
       return SoilRecommendation.fromJson(json.decode(jsonStr));
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+    } catch (e) {
+      throw Exception('Soil analysis failed: $e');
     }
   }
 
@@ -393,31 +323,5 @@ Return pure JSON only, no markdown.''';
       return text.substring(start, end + 1);
     }
     return text;
-  }
-
-  Future<Uint8List> _compressImage(File imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    // Limit to ~1MB for API efficiency
-    if (bytes.lengthInBytes < 1000000) return bytes;
-
-    // Simple resize - in production use flutter_image_compress
-    return bytes.sublist(0, bytes.lengthInBytes);
-  }
-
-  Exception _handleDioError(DioException e) {
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return Exception('Request timed out. Please check your internet connection.');
-    }
-    if (e.response?.statusCode == 401) {
-      return Exception('Invalid API key. Please check your configuration.');
-    }
-    if (e.response?.statusCode == 429) {
-      return Exception('Too many requests. Please wait a moment and try again.');
-    }
-    if (e.response?.statusCode == 500) {
-      return Exception('AI service is temporarily unavailable. Please try again later.');
-    }
-    return Exception('Network error: ${e.message}');
   }
 }

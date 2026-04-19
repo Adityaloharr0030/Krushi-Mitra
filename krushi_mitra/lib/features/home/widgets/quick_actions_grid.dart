@@ -5,7 +5,7 @@ import '../../weather/screens/weather_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
 import '../../soil_advisor/screens/soil_input_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
-import '../../farm_diary/screens/diary_home_screen.dart';
+import '../../farm_diary/screens/farm_diary_screen.dart';
 // import '../../chatbot/screens/chatbot_screen.dart'; (Already in bottom nav, but can add)
 
 class QuickActionGrid extends StatelessWidget {

@@ -1,198 +1,426 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/services/voice_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/ai_doctor_provider.dart';
 
-class AIDoctorScreen extends StatefulWidget {
+class AIDoctorScreen extends ConsumerStatefulWidget {
   const AIDoctorScreen({super.key});
 
   @override
-  State<AIDoctorScreen> createState() => _AIDoctorScreenState();
+  ConsumerState<AIDoctorScreen> createState() => _AIDoctorScreenState();
 }
 
-class _AIDoctorScreenState extends State<AIDoctorScreen> {
-  final TextEditingController _queryController = TextEditingController();
-  final VoiceService _voiceService = VoiceService();
-  bool _isProcessing = false;
-  bool _showResult = false; // Mock state
-  bool _isListening = false;
+class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
-  final List<String> _suggestedQuestions = [
-    "ये क्या बीमारी है?",
-    "कब पानी देना चाहिए?",
-    "पीले पत्ते क्यों हो रहे हैं?",
-    "कौन सा खाद डालें?"
-  ];
-
-  void _analyzeCrop() {
-    setState(() {
-      _isProcessing = true;
-      _showResult = false;
-    });
-    
-    // Simulate API delay
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() {
-        _isProcessing = false;
-        _showResult = true;
-      });
-      // Speak the diagnosis
-      _voiceService.speak("Diagnosis Complete. The problem is Leaf Rust. Please spray Neem oil.", languageCode: 'hi-IN');
-    });
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
-  void _toggleListening() async {
-    if (_isListening) {
-      await _voiceService.stopListening();
-      setState(() => _isListening = false);
-    } else {
-      setState(() => _isListening = true);
-      await _voiceService.startListening((text) {
-        setState(() {
-          _queryController.text = text;
-        });
-      }, localeId: 'hi_IN');
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildUploadSection(),
-          const SizedBox(height: 24),
-          _buildChatSection(),
-          const SizedBox(height: 24),
-          if (_isProcessing)
-            const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-          if (_showResult)
-            _buildResultCard(),
-        ],
-      ),
-    );
-  }
+    final aiState = ref.watch(aiDoctorProvider);
 
-  Widget _buildUploadSection() {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceGreenLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryGreen, width: 2, style: BorderStyle.solid),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.add_a_photo, size: 48, color: AppColors.primaryGreen),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _analyzeCrop, // In reality, opens camera/gallery before analyzing
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(200, 48),
-            ),
-            child: const Text('Take Photo of Crop'),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Or upload from gallery'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChatSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _queryController,
-                decoration: InputDecoration(
-                  hintText: 'Ask Krushi Mitra...',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send, color: AppColors.primaryGreen),
-                    onPressed: _analyzeCrop,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text(
+                    'Upload a photo to diagnose your crop',
+                    style: GoogleFonts.manrope(
+                      fontSize: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
+                  const SizedBox(height: 24),
+                  _buildCameraHero(aiState),
+                  const SizedBox(height: 24),
+                  if (aiState.diagnosis != null) ...[
+                    _buildDiagnosisResult(aiState.diagnosis!),
+                    const SizedBox(height: 24),
+                    _buildTreatmentTabs(aiState.diagnosis!),
+                    const SizedBox(height: 24),
+                    _buildActionButtons(),
+                  ] else if (aiState.isLoading) ...[
+                    _buildLoadingResult(),
+                  ],
+                  const SizedBox(height: 48),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: AppColors.background,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        title: Text(
+          '🤖 AI Crop Doctor',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.onSurface,
+          ),
+        ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1B5E20), Color(0xFF0D1F12)],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCameraHero(AIDoctorState state) {
+    return GestureDetector(
+      onTap: () => ref.read(aiDoctorProvider.notifier).pickImage(ImageSource.camera),
+      child: Container(
+        width: double.infinity,
+        height: 200,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+          image: state.selectedImage != null
+              ? DecorationImage(
+                  image: FileImage(state.selectedImage!),
+                  fit: BoxFit.cover,
+                )
+              : const DecorationImage(
+                  image: NetworkImage('https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=1000&auto=format&fit=crop'),
+                  fit: BoxFit.cover,
+                  opacity: 0.3,
                 ),
-              ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: state.selectedImage != null ? 0 : 5, sigmaY: state.selectedImage != null ? 0 : 5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (state.selectedImage == null) ...[
+                  const Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.primary),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tap to take photo',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(height: 1, width: 40, color: AppColors.outlineVariant),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('OR', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                      ),
+                      Container(height: 1, width: 40, color: AppColors.outlineVariant),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSecondaryButton('📁 Browse Gallery', () => ref.read(aiDoctorProvider.notifier).pickImage(ImageSource.gallery)),
+                ] else if (state.isLoading) ...[
+                  const CircularProgressIndicator(color: AppColors.primary),
+                  const SizedBox(height: 12),
+                  Text('Analyzing crop...', style: GoogleFonts.manrope(color: Colors.white)),
+                ],
+              ],
             ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: _isListening ? AppColors.error : AppColors.secondaryAmber,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(_isListening ? Icons.mic_off : Icons.mic, color: Colors.white),
-                onPressed: _toggleListening,
-              ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecondaryButton(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.manrope(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiagnosisResult(dynamic diagnosis) {
+    final severityColor = diagnosis.severity.toString().toLowerCase().contains('high') 
+        ? const Color(0xFFC62828) 
+        : const Color(0xFFE67E22);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 8,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [severityColor, severityColor.withOpacity(0.7)]),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
             ),
-          ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('⚠️', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        diagnosis.diseaseName,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  diagnosis.description,
+                  style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildChip('Confidence: ${(diagnosis.confidence * 100).round()}% 🎯', AppColors.surfaceContainerHighest, AppColors.onSurface),
+                    _buildChip(diagnosis.severity.toString().toUpperCase(), severityColor.withOpacity(0.2), severityColor.withOpacity(0.9)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingResult() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text('AI is diagnosing your crop...', style: GoogleFonts.manrope(color: AppColors.onSurface)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String text, Color bgColor, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.manrope(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTreatmentTabs(dynamic diagnosis) {
+    return Column(
+      children: [
+        Container(
+          height: 50,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(25),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: AppColors.onPrimary,
+            unselectedLabelColor: AppColors.onSurfaceVariant,
+            labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 14),
+            tabs: const [
+              Tab(text: 'Organic'),
+              Tab(text: 'Chemical'),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _suggestedQuestions.map((q) => ActionChip(
-            label: Text(q),
-            backgroundColor: AppColors.surfaceWhite,
-            side: BorderSide(color: Colors.grey.shade300),
-            onPressed: () {
-              _queryController.text = q;
-            },
-          )).toList(),
+        SizedBox(
+          height: 220,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildOrganicTab(diagnosis),
+              _buildChemicalTab(diagnosis),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildResultCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                const SizedBox(width: 8),
-                Text(
-                  'Diagnosis Complete',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.primaryGreen,
-                  ),
+  Widget _buildOrganicTab(dynamic diagnosis) {
+    final suggestions = diagnosis.organicTreatment as List;
+    return Column(
+      children: [
+        ...suggestions.map((s) => _buildTreatmentItem('🌿 $s')).toList(),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00695C).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF4DB6AC).withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.lightbulb_outline, color: Color(0xFF4DB6AC), size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'AI Prevention Tip: Keep monitoring and ensure proper soil health.',
+                  style: GoogleFonts.manrope(fontSize: 12, color: const Color(0xFFB2DFDB)),
                 ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildResultSection('Problem (बीमारी)', 'Leaf Rust (पत्ती रोली)'),
-            _buildResultSection('Cause (कारण)', 'Fungal infection exacerbated by high humidity.'),
-            _buildResultSection('Organic Remedy (जैविक उपाय)', 'Spray Neem oil mixed with water. (नीम का तेल छिड़कें)'),
-            _buildResultSection('Chemical Remedy (रासायनिक)', 'Apply Propiconazole 25% EC at 1ml per liter water.'),
-            _buildResultSection('Prevention (रोकथाम)', 'Ensure proper plant spacing for air circulation.'),
-          ],
+              ),
+            ],
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildChemicalTab(dynamic diagnosis) {
+    final suggestions = diagnosis.chemicalTreatment as List;
+    return Column(
+      children: [
+        ...suggestions.map((s) => _buildTreatmentItem('🧪 $s')).toList(),
+      ],
+    );
+  }
+
+  Widget _buildTreatmentItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 18),
+          const SizedBox(width: 12),
+          Text(
+            text,
+            style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildResultSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
-          Text(content),
-        ],
-      ),
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56),
+            backgroundColor: AppColors.tertiary,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.share_outlined, size: 20),
+              SizedBox(width: 8),
+              Text('Share Report'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          onPressed: () {},
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56),
+            side: const BorderSide(color: AppColors.outlineVariant),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+          ),
+          child: Text(
+            '💬 Ask AI More',
+            style: GoogleFonts.manrope(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

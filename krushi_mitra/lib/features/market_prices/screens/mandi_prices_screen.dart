@@ -22,23 +22,36 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundStone,
       appBar: AppBar(
-        title: const Text('Mandi Prices'),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        title: const Text('Mandi Intelligence'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildFilters(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             _buildBestMandiCard(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
+            Text(
+              'Price Trends',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
             _buildPriceTrendChart(),
-            const SizedBox(height: 24),
-            _buildPriceTable(),
+            const SizedBox(height: 40),
+            Text(
+              'Comparative Analysis',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            _buildPriceComparisonList(),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -49,27 +62,44 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
     return Row(
       children: [
         Expanded(
-          child: DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            value: 'Onion',
-            items: const [
-              DropdownMenuItem(value: 'Onion', child: Text('Onion')),
-              DropdownMenuItem(value: 'Tomato', child: Text('Tomato')),
-              DropdownMenuItem(value: 'Wheat', child: Text('Wheat')),
-            ],
-            onChanged: (val) {},
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWhite,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: 'Onion',
+                items: const [
+                  DropdownMenuItem(value: 'Onion', child: Text('Onion')),
+                  DropdownMenuItem(value: 'Tomato', child: Text('Tomato')),
+                ],
+                onChanged: (val) {},
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
-          child: DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'District', isDense: true),
-            value: 'Nashik',
-            items: const [
-              DropdownMenuItem(value: 'Nashik', child: Text('Nashik')),
-              DropdownMenuItem(value: 'Pune', child: Text('Pune')),
-            ],
-            onChanged: (val) {},
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWhite,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: 'Nashik',
+                items: const [
+                  DropdownMenuItem(value: 'Nashik', child: Text('Nashik')),
+                  DropdownMenuItem(value: 'Pune', child: Text('Pune')),
+                ],
+                onChanged: (val) {},
+              ),
+            ),
           ),
         ),
       ],
@@ -78,135 +108,151 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
 
   Widget _buildBestMandiCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceGreenLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen),
+        color: AppColors.primaryGreen,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.star, color: AppColors.secondaryAmber),
+              const Icon(Icons.stars_rounded, color: AppColors.tertiarySaffron, size: 24),
               const SizedBox(width: 8),
-              Text('Best Price Near You', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryGreen)),
+              Text(
+                'Market Opportunity',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Text('Pune Mandi is offering ₹1900/qtl for Onion (Modal Price), which is ₹50 higher than Nashik.'),
-          const SizedBox(height: 8),
-          TextButton.icon(
+          const SizedBox(height: 16),
+          const Text(
+            'Pune Mandi is currently offering the highest rate for Onion at ₹1,900/qtl.',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'This is 5% higher than your local Nashik market.',
+            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
             onPressed: () {},
-            icon: const Icon(Icons.directions),
-            label: const Text('Get Directions (60km)'),
-          )
+            icon: const Icon(Icons.near_me_outlined, size: 18),
+            label: const Text('View Route (64 km)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryGreen,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPriceTrendChart() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('7-Day Price Trend (Onion)', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(show: false),
-                  titlesData: FlTitlesData(
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                          if (value.toInt() >= 0 && value.toInt() < days.length) {
-                            return Text(days[value.toInt()]);
-                          }
-                          return const Text('');
-                        },
-                      ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(32),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Last 7 Days',
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: false),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                minX: 0,
+                maxX: 6,
+                minY: 1500,
+                maxY: 2000,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: const [
+                      FlSpot(0, 1600),
+                      FlSpot(1, 1650),
+                      FlSpot(2, 1850),
+                      FlSpot(3, 1750),
+                      FlSpot(4, 1900),
+                      FlSpot(5, 1880),
+                      FlSpot(6, 1910),
+                    ],
+                    isCurved: true,
+                    color: AppColors.primaryGreen,
+                    barWidth: 4,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppColors.primaryGreen.withOpacity(0.05),
                     ),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
-                  minX: 0,
-                  maxX: 6,
-                  minY: 1500,
-                  maxY: 2500,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 1600),
-                        FlSpot(1, 1650),
-                        FlSpot(2, 1800),
-                        FlSpot(3, 1750),
-                        FlSpot(4, 1850),
-                        FlSpot(5, 1900),
-                        FlSpot(6, 1850),
-                      ],
-                      isCurved: true,
-                      color: AppColors.primaryGreen,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(show: true, color: AppColors.primaryGreen.withOpacity(0.2)),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildPriceTable() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPriceComparisonList() {
+    return Column(
+      children: _prices.where((p) => p.commodity == 'Onion').map((p) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Today\'s Rates (₹/Quintal)', style: Theme.of(context).textTheme.titleLarge),
-                IconButton(icon: const Icon(Icons.add_alert, color: AppColors.secondaryAmber), onPressed: () {}),
-              ],
+            CircleAvatar(
+              backgroundColor: AppColors.backgroundStone,
+              child: Text(p.district[0], style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.surfaceGreenLight),
-                columns: const [
-                  DataColumn(label: Text('Mandi')),
-                  DataColumn(label: Text('Min')),
-                  DataColumn(label: Text('Max')),
-                  DataColumn(label: Text('Modal')),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(p.district, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('${p.commodity} • Modal Rate', style: TextStyle(color: AppColors.textHint, fontSize: 12)),
                 ],
-                rows: _prices.where((p) => p.commodity == 'Onion').map((p) => DataRow(
-                  cells: [
-                    DataCell(Text(p.district)),
-                    DataCell(Text('₹${p.minPrice.toInt()}')),
-                    DataCell(Text('₹${p.maxPrice.toInt()}')),
-                    DataCell(Text('₹${p.modalPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                )).toList(),
               ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('₹${p.modalPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
+                const Text('per Quintal', style: TextStyle(color: AppColors.textHint, fontSize: 10)),
+              ],
             ),
           ],
         ),
-      ),
+      )).toList(),
     );
   }
 }
