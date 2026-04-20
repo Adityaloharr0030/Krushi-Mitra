@@ -11,6 +11,10 @@
 
 ---
 
+### [🚀 Live Preview Interface](https://adityaloharr0030.github.io/Krushi-Mitra/) | [🎨 Stitch Design Project](https://stitch.google.com/projects/4491219888089917293)
+
+---
+
 **Krushi Mitra** (meaning *Farmer's Friend* in Hindi/Marathi) is a comprehensive AI-powered mobile application built with Flutter, designed to empower Indian farmers with smart agricultural tools, real-time data, and intelligent assistance — all in their local language.
 
 ---
