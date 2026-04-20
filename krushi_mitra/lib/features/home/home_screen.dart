@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import 'dashboard_view.dart';
+import '../../../core/constants/app_colors.dart';
+import 'screens/dashboard_view.dart';
 import '../ai_doctor/screens/ai_doctor_screen.dart';
 import '../govt_schemes/screens/schemes_list_screen.dart';
 import '../market_prices/screens/mandi_prices_screen.dart';

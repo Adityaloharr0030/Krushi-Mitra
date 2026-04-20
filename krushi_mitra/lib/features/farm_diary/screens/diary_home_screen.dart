@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/custom_app_bar.dart';
 
-class FarmDiaryScreen extends StatefulWidget {
-  const FarmDiaryScreen({super.key});
+class DiaryHomeScreen extends StatefulWidget {
+  const DiaryHomeScreen({super.key});
 
   @override
-  State<FarmDiaryScreen> createState() => _FarmDiaryScreenState();
+  State<DiaryHomeScreen> createState() => _DiaryHomeScreenState();
 }
 
-class _FarmDiaryScreenState extends State<FarmDiaryScreen> {
+
+class _DiaryHomeScreenState extends State<DiaryHomeScreen> {
   final List<Map<String, dynamic>> _entries = [
     {'date': '15 Apr 2026', 'activity': 'Urea Application', 'category': 'Fertilizer', 'cost': 1200.0, 'isExpense': true},
     {'date': '12 Apr 2026', 'activity': 'Tractor Rent', 'category': 'Labour', 'cost': 800.0, 'isExpense': true},
@@ -56,9 +57,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen> {
                     ),
                   ),
                   title: Text(entry['activity'], style: const TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text('\${entry['date']} • \${entry['category']}'),
+                  subtitle: Text('${entry['date']} • ${entry['category']}'),
                   trailing: Text(
-                    '\${entry['isExpense'] ? '-' : '+'}₹\${entry['cost']}',
+                    '${entry['isExpense'] ? '-' : '+'}₹${entry['cost']}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../auth/screens/auth_screens.dart'; // Mocking auth out
+import '../../../core/constants/app_colors.dart';
+import '../../auth/screens/auth_screens.dart'; // Auth screens
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

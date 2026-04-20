@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/voice_service.dart';
+import '../../../../core/services/ai_service.dart';
 
 class AIDoctorScreen extends StatefulWidget {
   const AIDoctorScreen({super.key});
@@ -12,9 +15,15 @@ class AIDoctorScreen extends StatefulWidget {
 class _AIDoctorScreenState extends State<AIDoctorScreen> {
   final TextEditingController _queryController = TextEditingController();
   final VoiceService _voiceService = VoiceService();
+  final AIService _aiService = AIService();
+  final ImagePicker _picker = ImagePicker();
+  
   bool _isProcessing = false;
-  bool _showResult = false; // Mock state
   bool _isListening = false;
+  File? _selectedImage;
+  CropDiagnosis? _diagnosis;
+  
+  final List<Map<String, dynamic>> _chatHistory = [];
 
   final List<String> _suggestedQuestions = [
     "ये क्या बीमारी है?",
@@ -23,21 +32,66 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
     "कौन सा खाद डालें?"
   ];
 
-  void _analyzeCrop() {
-    setState(() {
-      _isProcessing = true;
-      _showResult = false;
-    });
-    
-    // Simulate API delay
-    Future.delayed(const Duration(seconds: 3), () {
+  @override
+  void initState() {
+    super.initState();
+    _aiService.initialize();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
       setState(() {
-        _isProcessing = false;
-        _showResult = true;
+        _selectedImage = File(pickedFile.path);
+        _diagnosis = null; // Reset previous diagnosis
       });
-      // Speak the diagnosis
-      _voiceService.speak("Diagnosis Complete. The problem is Leaf Rust. Please spray Neem oil.", languageCode: 'hi-IN');
+      _analyzeCrop();
+    }
+  }
+
+  Future<void> _analyzeCrop() async {
+    if (_selectedImage == null) return;
+    
+    setState(() => _isProcessing = true);
+    
+    try {
+      final diagnosis = await _aiService.analyzeCropImage(_selectedImage!, 'hi');
+      setState(() {
+        _diagnosis = diagnosis;
+        _isProcessing = false;
+      });
+      _voiceService.speak("Diagnosis complete. Crop issue appears to be ${diagnosis.diseaseName}.", languageCode: 'en-US');
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error analyzing crop: $e')));
+      }
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _queryController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _chatHistory.add({'role': 'user', 'content': text});
+      _queryController.clear();
+      _isProcessing = true;
     });
+
+    try {
+      final response = await _aiService.chat(_chatHistory, text, 'hi');
+      setState(() {
+         _chatHistory.add({'role': 'assistant', 'content': response});
+         _isProcessing = false;
+      });
+      _voiceService.speak(response, languageCode: 'hi-IN');
+    } catch (e) {
+       setState(() => _isProcessing = false);
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to chat: $e')));
+       }
+    }
   }
 
   void _toggleListening() async {
@@ -66,8 +120,8 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
           _buildChatSection(),
           const SizedBox(height: 24),
           if (_isProcessing)
-            const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-          if (_showResult)
+            const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator(color: AppColors.primaryGreen))),
+          if (_diagnosis != null)
             _buildResultCard(),
         ],
       ),
@@ -76,30 +130,45 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
 
   Widget _buildUploadSection() {
     return Container(
-      height: 180,
+      height: _selectedImage == null ? 180 : 250,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surfaceGreenLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primaryGreen, width: 2, style: BorderStyle.solid),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.add_a_photo, size: 48, color: AppColors.primaryGreen),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _analyzeCrop, // In reality, opens camera/gallery before analyzing
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(200, 48),
+      child: _selectedImage != null 
+        ? Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.file(_selectedImage!, fit: BoxFit.cover)),
+              Positioned(
+                top: 8, right: 8,
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(icon: const Icon(Icons.close, color: Colors.red), onPressed: () => setState(() { _selectedImage = null; _diagnosis = null; })),
+                )
+              )
+            ],
+          )
+        : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_a_photo, size: 48, color: AppColors.primaryGreen),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _pickImage(ImageSource.camera),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 48),
+              ),
+              child: const Text('Take Photo of Crop'),
             ),
-            child: const Text('Take Photo of Crop'),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Or upload from gallery'),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () => _pickImage(ImageSource.gallery),
+              child: const Text('Or upload from gallery'),
+            ),
+          ],
+        ),
     );
   }
 
@@ -107,6 +176,31 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_chatHistory.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _chatHistory.length,
+              itemBuilder: (context, index) {
+                final chat = _chatHistory[index];
+                final isUser = chat['role'] == 'user';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Column(
+                    crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    children: [
+                      Text(isUser ? 'You' : 'Krushi Mitra', style: TextStyle(fontWeight: FontWeight.bold, color: isUser ? AppColors.primaryGreen : AppColors.secondaryAmber)),
+                      Text(chat['content']),
+                    ]
+                  )
+                );
+              }
+            ),
+          ),
         Row(
           children: [
             Expanded(
@@ -116,7 +210,7 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
                   hintText: 'Ask Krushi Mitra...',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.send, color: AppColors.primaryGreen),
-                    onPressed: _analyzeCrop,
+                    onPressed: _sendMessage,
                   ),
                 ),
               ),
@@ -152,6 +246,11 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
   }
 
   Widget _buildResultCard() {
+    if (_diagnosis == null) return const SizedBox.shrink();
+    
+    final diag = _diagnosis!;
+    final isHealthy = diag.isHealthy;
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -160,22 +259,30 @@ class _AIDoctorScreenState extends State<AIDoctorScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                Icon(isHealthy ? Icons.check_circle : Icons.warning_amber_rounded, color: isHealthy ? AppColors.primaryGreen : AppColors.error),
                 const SizedBox(width: 8),
-                Text(
-                  'Diagnosis Complete',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.primaryGreen,
+                Expanded(
+                  child: Text(
+                    isHealthy ? 'Crop Looks Healthy!' : 'Issue Detected: ${diag.diseaseName}',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: isHealthy ? AppColors.primaryGreen : AppColors.error,
+                    ),
                   ),
                 ),
               ],
             ),
             const Divider(height: 24),
-            _buildResultSection('Problem (बीमारी)', 'Leaf Rust (पत्ती रोली)'),
-            _buildResultSection('Cause (कारण)', 'Fungal infection exacerbated by high humidity.'),
-            _buildResultSection('Organic Remedy (जैविक उपाय)', 'Spray Neem oil mixed with water. (नीम का तेल छिड़कें)'),
-            _buildResultSection('Chemical Remedy (रासायनिक)', 'Apply Propiconazole 25% EC at 1ml per liter water.'),
-            _buildResultSection('Prevention (रोकथाम)', 'Ensure proper plant spacing for air circulation.'),
+            _buildResultSection('Crop Identified', diag.cropName),
+            _buildResultSection('Severity', diag.severity.toUpperCase()),
+            _buildResultSection('Symptoms', diag.symptoms),
+            _buildResultSection('Cause', diag.causes),
+            if (!isHealthy) ...[
+              _buildResultSection('Organic Remedy', diag.treatmentOrganic),
+              _buildResultSection('Chemical Remedy', diag.treatmentChemical),
+              _buildResultSection('Prevention', diag.prevention),
+            ],
+            const SizedBox(height: 8),
+            Text('Confidence: ${diag.confidencePercent}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
           ],
         ),
       ),

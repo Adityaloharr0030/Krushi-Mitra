@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'widgets/quick_actions_grid.dart';
-import 'widgets/weather_card.dart';
+import '../widgets/quick_actions_grid.dart';
+import '../widgets/weather_card.dart';
 import '../../../core/services/weather_service.dart';
 
 class HomeScreen extends StatelessWidget {

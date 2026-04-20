@@ -24,4 +24,10 @@ class AppColors {
   static const Color error = Color(0xFFC62828);
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFEF6C00);
+
+  // Aliases for compatibility
+  static const Color primary = primaryGreen;
+  static const Color accent = secondaryAmber;
+  static const Color primaryContainer = surfaceGreenLight;
+  static const Color surfaceVariant = Color(0xFFEEF2EE);
 }

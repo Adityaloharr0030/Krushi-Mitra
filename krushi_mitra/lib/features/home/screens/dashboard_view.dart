@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../weather/screens/weather_screen.dart';
-import '../farm_diary/screens/farm_diary_screen.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../weather/screens/weather_screen.dart';
+import '../../farm_diary/screens/diary_home_screen.dart';
 import '../../../shared/widgets/offline_banner.dart';
 
 class DashboardView extends StatelessWidget {
@@ -143,7 +143,7 @@ class DashboardView extends StatelessWidget {
           child: InkWell(
             onTap: () {
               if (action['title'] == 'Farm Diary') {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const FarmDiaryScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const DiaryHomeScreen()));
               }
             },
             child: Container(

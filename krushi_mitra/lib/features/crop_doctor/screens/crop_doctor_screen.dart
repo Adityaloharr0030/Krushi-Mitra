@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/error_widget.dart';
-import '../../../../shared/widgets/loading_widget.dart';
-import '../../models/crop_diagnosis.dart';
-import '../../services/ai_service.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/custom_app_bar.dart';
+import '../../../shared/widgets/error_widget.dart';
+import '../../../shared/widgets/loading_widget.dart';
+import '../../../core/services/ai_service.dart';
 import 'package:image_picker/image_picker.dart';
+
 
 class CropDoctorScreen extends StatefulWidget {
   const CropDoctorScreen({super.key});
@@ -228,7 +228,7 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
 
   Widget _buildResultCard(CropDiagnosis result) {
     final bool isHealthy = result.isHealthy;
-    final Color statusColor = isHealthy ? AppColors.healthyGreen : AppColors.diseaseRed;
+    final Color statusColor = isHealthy ? AppColors.success : AppColors.error;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
