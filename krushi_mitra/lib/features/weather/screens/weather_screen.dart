@@ -1,209 +1,343 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../data/models/weather_model.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/weather_provider.dart';
 
-class WeatherScreen extends StatefulWidget {
+class WeatherScreen extends ConsumerWidget {
   const WeatherScreen({super.key});
 
   @override
-  State<WeatherScreen> createState() => _WeatherScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weatherAsync = ref.watch(weatherProvider);
 
-class _WeatherScreenState extends State<WeatherScreen> {
-  // Mock Data
-  final WeatherData _currentWeather = WeatherData(
-    temperature: 32,
-    humidity: 65,
-    windSpeed: 12,
-    rainfall: 0,
-    condition: 'Sunny',
-    date: DateTime.now(),
-  );
-
-  final List<WeatherData> _forecast = List.generate(7, (index) => WeatherData(
-    temperature: 30.0 + (index % 4),
-    humidity: 60.0 + (index * 2),
-    windSpeed: 10.0 + index,
-    rainfall: index > 4 ? 15.0 : 0.0,
-    condition: index > 4 ? 'Rainy' : 'Sunny',
-    date: DateTime.now().add(Duration(days: index + 1)),
-  ));
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Weather & Alerts'),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildCurrentWeatherCard(),
-            const SizedBox(height: 24),
-            _buildAIAdviceSection(),
-            const SizedBox(height: 24),
-            Text('7-Day Forecast', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            _buildForecastList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCurrentWeatherCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryLight, AppColors.primaryGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Nashik, MH', style: TextStyle(color: Colors.white, fontSize: 18)),
-                  const SizedBox(height: 4),
-                  Text(DateFormat('EEEE, MMM d').format(_currentWeather.date), style: const TextStyle(color: Colors.white70)),
-                ],
-              ),
-              const Icon(Icons.wb_sunny, size: 48, color: AppColors.secondaryLight),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('${_currentWeather.temperature.toInt()}°', style: const TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.bold)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _buildWeatherDetailRow(Icons.water_drop, 'Humidity', '${_currentWeather.humidity.toInt()}%'),
-                  const SizedBox(height: 8),
-                  _buildWeatherDetailRow(Icons.air, 'Wind', '${_currentWeather.windSpeed.toInt()} km/h'),
-                  const SizedBox(height: 8),
-                  _buildWeatherDetailRow(Icons.umbrella, 'Rain', '${_currentWeather.rainfall.toInt()} mm'),
-                ],
-              )
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeatherDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white70, size: 16),
-        const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildAIAdviceSection() {
-    return Card(
-      color: AppColors.surfaceGreenLight,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.primaryGreen.withOpacity(0.5)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.psychology, color: AppColors.primaryGreen),
-                const SizedBox(width: 8),
-                Text('Krushi Mitra Advice', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryGreen)),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildAdviceRow(Icons.check_circle, Colors.green, 'Good time to spray pesticides today. Low wind speed prevents drift.'),
-            const SizedBox(height: 12),
-            _buildAdviceRow(Icons.warning, AppColors.warning, 'Irrigation not needed today. Soil moisture is sufficient.'),
-            const SizedBox(height: 12),
-            _buildAdviceRow(Icons.error, AppColors.error, 'Heavy rain expected on Sunday. Delay harvesting if planned.'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdviceRow(IconData icon, Color color, String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 12),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
-      ],
-    );
-  }
-
-  Widget _buildForecastList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _forecast.length,
-      itemBuilder: (context, index) {
-        final weather = _forecast[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SizedBox(
-                width: 100,
-                child: Text(
-                  DateFormat('EEEE').format(weather.date),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      backgroundColor: AppColors.background,
+      body: weatherAsync.when(
+        data: (weather) => CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeroWeatherCard(weather),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Today\'s Detailed Forecast'),
+                    const SizedBox(height: 12),
+                    _buildHourlyForecast(weather),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('5-Day Forecast'),
+                    const SizedBox(height: 12),
+                    _buildWeeklyForecast(weather),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('🌾 AI Farming Advisories'),
+                    const SizedBox(height: 12),
+                    _buildFarmingAdvisories(weather),
+                    const SizedBox(height: 48),
+                  ],
                 ),
               ),
-              Row(
-                children: [
-                  Icon(weather.condition == 'Rainy' ? Icons.water_drop : Icons.wb_sunny, 
-                    color: weather.condition == 'Rainy' ? Colors.blue : AppColors.secondaryAmber, size: 20),
-                  const SizedBox(width: 8),
-                  Text('${weather.rainfall > 0 ? weather.rainfall.toInt() : 0}%', style: TextStyle(color: Colors.grey.shade600)),
-                ],
+            ),
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 80.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: AppColors.background,
+      elevation: 0,
+      title: Text(
+        'Weather Forecast',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: AppColors.onSurface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroWeatherCard(dynamic weather) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: _getWeatherGradient(weather.condition),
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Opacity(
+              opacity: 0.1,
+              child: Icon(_getWeatherIcon(weather.condition), size: 160, color: Colors.white),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${weather.temperature.round()}°C',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          weather.condition,
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Icon(_getWeatherIcon(weather.condition), size: 60, color: const Color(0xFFFFD54F)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  weather.cityName,
+                  style: GoogleFonts.manrope(fontSize: 13, color: Colors.white70),
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: Colors.white12),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildWeatherStat('Feels like', '${weather.feelsLike.round()}°C'),
+                    _buildWeatherStat('Humidity', '${weather.humidity}%'),
+                    _buildWeatherStat('Wind Speed', '${weather.windSpeed} km/h'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Color> _getWeatherGradient(String condition) {
+    condition = condition.toLowerCase();
+    if (condition.contains('rain')) return [const Color(0xFF1976D2), const Color(0xFF0D47A1)];
+    if (condition.contains('cloud')) return [const Color(0xFF607D8B), const Color(0xFF37474F)];
+    return [const Color(0xFF2E7D32), const Color(0xFF1B5E20)];
+  }
+
+  IconData _getWeatherIcon(String condition) {
+    condition = condition.toLowerCase();
+    if (condition.contains('sun') || condition.contains('clear')) return Icons.wb_sunny_rounded;
+    if (condition.contains('rain')) return Icons.umbrella_rounded;
+    if (condition.contains('cloud')) return Icons.cloud_rounded;
+    return Icons.wb_cloudy_rounded;
+  }
+
+  Widget _buildWeatherStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.manrope(fontSize: 12, color: Colors.white60),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.manrope(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: AppColors.onSurface,
+      ),
+    );
+  }
+
+  Widget _buildHourlyForecast(dynamic weather) {
+    final daily = weather.dailyForecast as List;
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: daily.length,
+        itemBuilder: (context, index) {
+          final day = daily[index];
+          return Container(
+            width: 90,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(day['day'], style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                Icon(_getWeatherIcon(day['condition']), size: 24, color: AppColors.primary),
+                const SizedBox(height: 4),
+                Text('${day['temp']}°', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWeeklyForecast(dynamic weather) {
+    final daily = weather.dailyForecast as List;
+    return Column(
+      children: daily.map((day) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(day['day'], style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
               ),
-              Row(
-                children: [
-                  Text('${weather.temperature.toInt()}°', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 8),
-                  Text('${(weather.temperature - 6).toInt()}°', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
-                ],
-              )
+              Expanded(
+                child: Icon(_getWeatherIcon(day['condition']), size: 24, color: AppColors.primary),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text('${day['temp']}° / ${day['temp'] - 8}°', textAlign: TextAlign.center, style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface)),
+              ),
             ],
           ),
         );
-      },
+      }).toList(),
+    );
+  }
+
+  Widget _buildFarmingAdvisories(dynamic weather) {
+    final tips = weather.farmingTips as List;
+    final colors = [const Color(0xFF2E7D32), const Color(0xFFF57F17), const Color(0xFF1565C0)];
+    
+    return Column(
+      children: List.generate(tips.length, (i) {
+        final color = colors[i % colors.length];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Text('💡', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  tips[i],
+                  style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurface),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildWeatherAlert(dynamic weather) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFB71C1C).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD32F2F).withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF5350), size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Thunderstorm Warning',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFEF5350),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 14, color: Colors.white.withOpacity(0.8)),
+                    const SizedBox(width: 4),
+                    Text(
+                      weather.cityName,
+                      style: GoogleFonts.manrope(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Expected in 3 days. Secure your equipment and livestock.',
+                  style: GoogleFonts.manrope(fontSize: 12, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

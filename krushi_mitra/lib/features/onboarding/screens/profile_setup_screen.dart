@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../home/home_screen.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../home/screens/home_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -52,7 +52,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             Text(
               'Tell us about yourself',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                color: AppColors.primaryGreen,
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 8),

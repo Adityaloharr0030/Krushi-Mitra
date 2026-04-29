@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../crop_doctor/screens/crop_doctor_screen.dart';
 import '../../market_prices/screens/market_screen.dart';
 import '../../weather/screens/weather_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
 import '../../soil_advisor/screens/soil_input_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
-import '../../farm_diary/screens/diary_home_screen.dart';
-// import '../../chatbot/screens/chatbot_screen.dart'; (Already in bottom nav, but can add)
+import '../../farm_diary/screens/farm_diary_screen.dart';
 
 class QuickActionGrid extends StatelessWidget {
   const QuickActionGrid({super.key});
@@ -14,14 +15,14 @@ class QuickActionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      {'title': 'Crop Doctor', 'icon': Icons.healing, 'color': Colors.red.shade400},
-      {'title': 'Mandi Prices', 'icon': Icons.trending_up, 'color': Colors.blue.shade400},
-      {'title': 'AI Chat', 'icon': Icons.chat, 'color': Colors.green.shade400},
-      {'title': 'Schemes', 'icon': Icons.account_balance, 'color': Colors.orange.shade400},
-      {'title': 'Weather', 'icon': Icons.wb_sunny, 'color': Colors.amber.shade400},
-      {'title': 'Soil Advisor', 'icon': Icons.science, 'color': Colors.purple.shade400},
-      {'title': 'Farm Diary', 'icon': Icons.book, 'color': Colors.brown.shade400},
-      {'title': 'Community', 'icon': Icons.people, 'color': Colors.teal.shade400},
+      {'title': 'Crop Doctor', 'emoji': '🩺', 'color': const Color(0xFFEF5350)},
+      {'title': 'Mandi Prices', 'emoji': '📈', 'color': const Color(0xFF42A5F5)},
+      {'title': 'Weather', 'emoji': '🌤️', 'color': const Color(0xFF26C6DA)},
+      {'title': 'Schemes', 'emoji': '🏛️', 'color': const Color(0xFFFF7043)},
+      {'title': 'Soil Advisor', 'emoji': '🌎', 'color': const Color(0xFFAB47BC)},
+      {'title': 'Farm Diary', 'emoji': '📔', 'color': const Color(0xFF26A69A)},
+      {'title': 'Crop Calendar', 'emoji': '📅', 'color': const Color(0xFF66BB6A)},
+      {'title': 'Community', 'emoji': '👥', 'color': const Color(0xFF8D6E63)},
     ];
 
     return GridView.builder(
@@ -30,12 +31,13 @@ class QuickActionGrid extends StatelessWidget {
       itemCount: actions.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
       itemBuilder: (context, index) {
         final action = actions[index];
-        return InkWell(
+        final color = action['color'] as Color;
+        return GestureDetector(
           onTap: () {
             Widget? destination;
             switch (action['title']) {
@@ -51,7 +53,7 @@ class QuickActionGrid extends StatelessWidget {
               case 'Schemes':
                 destination = const SchemesListScreen();
                 break;
-              case 'Soil Advisor': // Assuming you'll change 'Calculator' to 'Soil Advisor' or add it
+              case 'Soil Advisor':
                 destination = const SoilInputScreen();
                 break;
               case 'Farm Diary':
@@ -62,27 +64,41 @@ class QuickActionGrid extends StatelessWidget {
                 break;
             }
             if (destination != null) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => destination!));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => destination!),
+              );
             }
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircleAvatar(
-                backgroundColor: (action['color'] as Color).withOpacity(0.2),
-                radius: 28,
-                child: Icon(
-                  action['icon'] as IconData,
-                  color: action['color'] as Color,
-                  size: 28,
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: color.withOpacity(0.25)),
+                ),
+                child: Center(
+                  child: Text(
+                    action['emoji'] as String,
+                    style: const TextStyle(fontSize: 24),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 7),
               Text(
                 action['title'] as String,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12),
+                style: GoogleFonts.manrope(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -91,3 +107,4 @@ class QuickActionGrid extends StatelessWidget {
     );
   }
 }
+
