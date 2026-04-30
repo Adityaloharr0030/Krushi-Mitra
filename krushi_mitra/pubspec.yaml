@@ -59,6 +59,7 @@ dependencies:
   equatable: ^2.0.5
 
   path: any
+  google_generative_ai: ^0.4.7
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,13 +1,10 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Anthropic Claude API
-  static const String claudeBaseUrl = 'https://api.anthropic.com/v1';
-  static const String claudeMessagesEndpoint = '/messages';
-  static const String claudeModel = 'claude-opus-4-5';
-  static const String claudeApiVersion = '2023-06-01';
-  static const int claudeMaxTokens = 1500;
-  static const int claudeMaxTokensChat = 800;
+  // Google Gemini AI (FREE Tier)
+  static const String geminiModel = 'gemini-1.5-flash';
+  static const String geminiVisionModel = 'gemini-1.5-flash';
+  static const int geminiMaxTokens = 2048;
 
   // OpenWeatherMap API
   static const String weatherBaseUrl = 'https://api.openweathermap.org/data/2.5';
