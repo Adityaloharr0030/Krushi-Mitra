@@ -63,7 +63,7 @@ class MarketPriceSlider extends StatelessWidget {
                   color: AppColors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: trendColor.withOpacity(0.2),
+                    color: trendColor.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(

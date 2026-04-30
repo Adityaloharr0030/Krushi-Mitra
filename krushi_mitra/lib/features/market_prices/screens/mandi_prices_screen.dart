@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../data/models/mandi_price_model.dart';
-import 'package:intl/intl.dart';
 
 class MandiPricesScreen extends StatefulWidget {
   const MandiPricesScreen({super.key});
@@ -51,7 +50,7 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            value: 'Onion',
+            initialValue: 'Onion',
             items: const [
               DropdownMenuItem(value: 'Onion', child: Text('Onion')),
               DropdownMenuItem(value: 'Tomato', child: Text('Tomato')),
@@ -64,7 +63,7 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'District', isDense: true),
-            value: 'Nashik',
+            initialValue: 'Nashik',
             items: const [
               DropdownMenuItem(value: 'Nashik', child: Text('Nashik')),
               DropdownMenuItem(value: 'Pune', child: Text('Pune')),
@@ -157,7 +156,7 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
                       color: AppColors.primaryGreen,
                       barWidth: 3,
                       dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(show: true, color: AppColors.primaryGreen.withOpacity(0.2)),
+                      belowBarData: BarAreaData(show: true, color: AppColors.primaryGreen.withValues(alpha: 0.2)),
                     ),
                   ],
                 ),
@@ -187,7 +186,7 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.surfaceGreenLight),
+                headingRowColor: WidgetStateProperty.all(AppColors.surfaceGreenLight),
                 columns: const [
                   DataColumn(label: Text('Mandi')),
                   DataColumn(label: Text('Min')),

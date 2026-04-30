@@ -15,7 +15,6 @@ import '../../market_prices/screens/market_prices_screen.dart';
 import '../../farm_diary/screens/farm_diary_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
-import '../../input_calculator/screens/calculator_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +26,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _alertController;
-  bool _alertDismissed = false;
+  final bool _alertDismissed = false;
 
   final List<Widget> _screens = const [
     _HomeContent(),
@@ -79,7 +78,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
           borderRadius: BorderRadius.circular(50),
           boxShadow: [
             BoxShadow(
-              color: AppColors.tertiary.withOpacity(0.4),
+              color: AppColors.tertiary.withValues(alpha: 0.4),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -116,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
         border: Border(
-          top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.3)),
+          top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
         ),
       ),
       child: SafeArea(
@@ -165,7 +164,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: isSelected
             ? BoxDecoration(
-                color: AppColors.harvestGold.withOpacity(0.12),
+                color: AppColors.harvestGold.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               )
             : null,
@@ -279,12 +278,12 @@ class _HomeContent extends ConsumerWidget {
                 ],
               ),
               // Language + Calculator shortcut
-              Row(
+              const Row(
                 children: [
                   _LanguageChip(langCode: 'en', label: 'EN'),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   _LanguageChip(langCode: 'hi', label: 'हिं'),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   _LanguageChip(langCode: 'mr', label: 'मर'),
                 ],
               ),
@@ -318,7 +317,7 @@ class _AlertBannerState extends State<_AlertBanner> {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.harvestGold.withOpacity(0.4),
+          color: AppColors.harvestGold.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -348,7 +347,7 @@ class _AlertBannerState extends State<_AlertBanner> {
           ),
           GestureDetector(
             onTap: () => setState(() => _dismissed = true),
-            child: Icon(Icons.close, color: Colors.white54, size: 18),
+            child: const Icon(Icons.close, color: Colors.white54, size: 18),
           ),
         ],
       ),
@@ -419,10 +418,10 @@ class _StatCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerHighest.withOpacity(0.7),
+            color: AppColors.surfaceContainerHighest.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.outlineVariant.withOpacity(0.3),
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -611,7 +610,7 @@ class _FeatureCardState extends State<_FeatureCard>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: widget.gradient.colors.first.withOpacity(0.35),
+                color: widget.gradient.colors.first.withValues(alpha: 0.35),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -628,7 +627,7 @@ class _FeatureCardState extends State<_FeatureCard>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
               ),
@@ -639,7 +638,7 @@ class _FeatureCardState extends State<_FeatureCard>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -723,13 +722,13 @@ class _LanguageChip extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withOpacity(0.25)
-              : AppColors.surfaceContainerHighest.withOpacity(0.5),
+              ? AppColors.primary.withValues(alpha: 0.25)
+              : AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
-                ? AppColors.primary.withOpacity(0.6)
-                : AppColors.outlineVariant.withOpacity(0.3),
+                ? AppColors.primary.withValues(alpha: 0.6)
+                : AppColors.outlineVariant.withValues(alpha: 0.3),
           ),
         ),
         child: Text(

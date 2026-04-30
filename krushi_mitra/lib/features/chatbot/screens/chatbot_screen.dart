@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -138,13 +137,13 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest.withOpacity(0.6),
+              color: AppColors.surfaceContainerHighest.withValues(alpha: 0.6),
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(20),
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
               ),
-              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
             ),
             child: Text(
               text,
@@ -181,7 +180,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.harvestGold.withOpacity(0.2),
+                  color: AppColors.harvestGold.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -215,9 +214,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest.withOpacity(0.6),
+          color: AppColors.surfaceContainerHighest.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,9 +280,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(50),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
@@ -306,7 +305,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             height: 6,
             margin: const EdgeInsets.only(right: 4),
             decoration: BoxDecoration(
-              color: AppColors.onSurfaceVariant.withOpacity(0.5),
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
           )),
@@ -322,7 +321,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        border: Border(top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.2))),
+        border: Border(top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.2))),
       ),
       child: Column(
         children: [
@@ -413,7 +412,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
         ),
         child: Text(
           label,

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/ai_doctor_provider.dart';
 import '../../../core/services/ai_service.dart';
 
@@ -110,12 +109,12 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
         width: double.infinity,
         height: 200,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest.withOpacity(0.5),
+          color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           image: state.selectedImage != null
               ? DecorationImage(
-                  image: FileImage(state.selectedImage!),
+                  image: FileImage(state.selectedImageFile!),
                   fit: BoxFit.cover,
                 )
               : const DecorationImage(
@@ -177,7 +176,7 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Text(
           text,
@@ -205,14 +204,14 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
           Container(
             height: 8,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [severityColor, severityColor.withOpacity(0.7)]),
+              gradient: LinearGradient(colors: [severityColor, severityColor.withValues(alpha: 0.7)]),
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
             ),
           ),
@@ -266,7 +265,7 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                     ),
                     _buildChip(
                       diagnosis.severity.toUpperCase(),
-                      severityColor.withOpacity(0.2),
+                      severityColor.withValues(alpha: 0.2),
                       severityColor,
                     ),
                   ],
@@ -365,14 +364,14 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
     return SingleChildScrollView(
       child: Column(
         children: [
-          ...suggestions.map((s) => _buildTreatmentItem('🌿 $s')).toList(),
+          ...suggestions.map((s) => _buildTreatmentItem('🌿 $s')),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF00695C).withOpacity(0.2),
+              color: const Color(0xFF00695C).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF4DB6AC).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFF4DB6AC).withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -401,14 +400,14 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
     return SingleChildScrollView(
       child: Column(
         children: [
-          ...suggestions.map((s) => _buildTreatmentItem('🧪 $s')).toList(),
+          ...suggestions.map((s) => _buildTreatmentItem('🧪 $s')),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF4A0000).withOpacity(0.2),
+              color: const Color(0xFF4A0000).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFEF9A9A).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFFEF9A9A).withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -453,9 +452,9 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
             minimumSize: const Size(double.infinity, 56),
             backgroundColor: AppColors.tertiary,
           ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Icon(Icons.share_outlined, size: 20),
               SizedBox(width: 8),
               Text('Share Report'),

@@ -5,7 +5,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/providers/weather_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../weather/screens/weather_screen.dart';
-import '../../farm_diary/screens/farm_diary_screen.dart';
 import '../widgets/market_price_slider.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/weather_card.dart';
@@ -39,7 +38,7 @@ class DashboardView extends ConsumerWidget {
               children: [
                 _buildGreetingSection(userName),
                 const SizedBox(height: 28),
-                MarketPriceSlider(),
+                const MarketPriceSlider(),
                 const SizedBox(height: 28),
                 _buildWeatherSection(context, weatherAsync),
                 const SizedBox(height: 28),
@@ -225,8 +224,8 @@ class DashboardView extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isUrgent
-                          ? AppColors.error.withOpacity(0.3)
-                          : AppColors.outlineVariant.withOpacity(0.2),
+                          ? AppColors.error.withValues(alpha: 0.3)
+                          : AppColors.outlineVariant.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -236,8 +235,8 @@ class DashboardView extends ConsumerWidget {
                         height: 44,
                         decoration: BoxDecoration(
                           color: isUrgent
-                              ? AppColors.errorContainer.withOpacity(0.3)
-                              : AppColors.primaryContainer.withOpacity(0.2),
+                              ? AppColors.errorContainer.withValues(alpha: 0.3)
+                              : AppColors.primaryContainer.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Center(

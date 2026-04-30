@@ -64,7 +64,7 @@ class _CalcCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class _ResultCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -116,7 +116,7 @@ class _ResultCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -157,7 +157,7 @@ Widget _buildCalcDropdown<T>({
   required ValueChanged<T?> onChanged,
 }) {
   return DropdownButtonFormField<T>(
-    value: value,
+    initialValue: value,
     decoration: InputDecoration(labelText: label),
     dropdownColor: AppColors.surfaceContainerHigh,
     style: GoogleFonts.manrope(color: AppColors.onSurface, fontSize: 15),
@@ -270,9 +270,9 @@ class _FertilizerCalculatorState extends State<_FertilizerCalculator> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.primaryContainer.withOpacity(0.15),
+                color: AppColors.primaryContainer.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -396,9 +396,9 @@ class _SeedRateCalculatorState extends State<_SeedRateCalculator> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.tertiaryContainer.withOpacity(0.15),
+                color: AppColors.tertiaryContainer.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.tertiary.withOpacity(0.2)),
+                border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -544,14 +544,14 @@ class _PesticideCalculatorState extends State<_PesticideCalculator> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.errorContainer.withOpacity(0.15),
+                color: AppColors.errorContainer.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.error.withOpacity(0.25)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.health_and_safety_outlined, color: AppColors.error, size: 18),
+                  const Icon(Icons.health_and_safety_outlined, color: AppColors.error, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -701,13 +701,13 @@ class _IrrigationCalculatorState extends State<_IrrigationCalculator> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.secondaryContainer.withOpacity(0.15),
+                color: AppColors.secondaryContainer.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
+                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.tips_and_updates_rounded, color: AppColors.secondary, size: 18),
+                  const Icon(Icons.tips_and_updates_rounded, color: AppColors.secondary, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

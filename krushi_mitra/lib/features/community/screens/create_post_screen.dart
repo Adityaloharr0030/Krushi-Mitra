@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -50,7 +50,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     decoration: const InputDecoration(labelText: 'Post Type', isDense: true),
-                    value: _selectedPostType,
+                    initialValue: _selectedPostType,
                     items: _postTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
                     onChanged: (val) => setState(() => _selectedPostType = val!),
                   ),
@@ -59,7 +59,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     decoration: const InputDecoration(labelText: 'Related Crop', isDense: true),
-                    value: _selectedCrop,
+                    initialValue: _selectedCrop,
                     items: _crops.map((crop) => DropdownMenuItem(value: crop, child: Text(crop))).toList(),
                     onChanged: (val) => setState(() => _selectedCrop = val!),
                   ),

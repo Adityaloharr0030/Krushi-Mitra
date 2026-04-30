@@ -1,10 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/weather_provider.dart';
+import '../../../core/services/weather_service.dart';
 
 class WeatherScreen extends ConsumerWidget {
   const WeatherScreen({super.key});
@@ -114,7 +113,7 @@ class WeatherScreen extends ConsumerWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -161,6 +160,11 @@ class WeatherScreen extends ConsumerWidget {
     return Icons.wb_cloudy_rounded;
   }
 
+  String _getDayName(int weekday) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[weekday - 1];
+  }
+
   Widget _buildWeatherStat(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,31 +196,32 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHourlyForecast(dynamic weather) {
-    final daily = weather.dailyForecast as List;
+  Widget _buildHourlyForecast(WeatherData weather) {
+    final List<HourlyForecast> hourly = weather.hourlyForecasts;
     return SizedBox(
       height: 110,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: daily.length,
+        itemCount: hourly.length,
         itemBuilder: (context, index) {
-          final day = daily[index];
+          final hour = hourly[index];
+          final timeStr = "${hour.time.hour}:00";
           return Container(
             width: 90,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(day['day'], style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                Text(timeStr, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
                 const SizedBox(height: 4),
-                Icon(_getWeatherIcon(day['condition']), size: 24, color: AppColors.primary),
+                Icon(_getWeatherIcon(hour.condition), size: 24, color: AppColors.primary),
                 const SizedBox(height: 4),
-                Text('${day['temp']}°', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                Text('${hour.temperature.round()}°', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
               ],
             ),
           );
@@ -225,30 +230,31 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWeeklyForecast(dynamic weather) {
-    final daily = weather.dailyForecast as List;
+  Widget _buildWeeklyForecast(WeatherData weather) {
+    final List<DailyForecast> daily = weather.dailyForecasts;
     return Column(
       children: daily.map((day) {
+        final dayName = _getDayName(day.date.weekday);
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
               Expanded(
                 flex: 2,
-                child: Text(day['day'], style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                child: Text(dayName, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
               ),
               Expanded(
-                child: Icon(_getWeatherIcon(day['condition']), size: 24, color: AppColors.primary),
+                child: Icon(_getWeatherIcon(day.condition), size: 24, color: AppColors.primary),
               ),
               Expanded(
                 flex: 2,
-                child: Text('${day['temp']}° / ${day['temp'] - 8}°', textAlign: TextAlign.center, style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface)),
+                child: Text('${day.maxTemp.round()}° / ${day.minTemp.round()}°', textAlign: TextAlign.center, style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface)),
               ),
             ],
           ),
@@ -258,7 +264,9 @@ class WeatherScreen extends ConsumerWidget {
   }
 
   Widget _buildFarmingAdvisories(dynamic weather) {
-    final tips = weather.farmingTips as List;
+    final String advice = weather.farmingAdvice;
+    // Split into a list of tips (assuming it's a single string, we just create a 1-item list)
+    final List<String> tips = [advice];
     final colors = [const Color(0xFF2E7D32), const Color(0xFFF57F17), const Color(0xFF1565C0)];
     
     return Column(
@@ -268,9 +276,9 @@ class WeatherScreen extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -289,55 +297,6 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWeatherAlert(dynamic weather) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB71C1C).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD32F2F).withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF5350), size: 28),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Thunderstorm Warning',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFFEF5350),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.white.withOpacity(0.8)),
-                    const SizedBox(width: 4),
-                    Text(
-                      weather.cityName,
-                      style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Expected in 3 days. Secure your equipment and livestock.',
-                  style: GoogleFonts.manrope(fontSize: 12, color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed unused _buildWeatherAlert method
+
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'profile_setup_screen.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
@@ -33,7 +33,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              Center(
+              const Center(
                 child: Icon(
                   Icons.agriculture,
                   size: 80,
@@ -88,7 +88,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primaryGreen.withOpacity(0.3),
+                                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),

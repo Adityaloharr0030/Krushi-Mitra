@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/market_service.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -68,7 +68,7 @@ class _MarketScreenState extends State<MarketScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedState,
+                  initialValue: _selectedState,
                   decoration: const InputDecoration(labelText: 'State', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                   items: _marketService.getAvailableStates()
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -125,30 +125,30 @@ class _MarketScreenState extends State<MarketScreen> {
                       price.commodity,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    Text(
+                    const Text(
                       '₹\${price.modalPrice}/Qtl',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('\${price.variety} • \${price.market}, \${price.district}'),
+                const Text('\${price.variety} • \${price.market}, \${price.district}'),
                 const Divider(height: 24),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Min Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('₹\${price.minPrice}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                        Text('Min Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        Text('₹\${price.minPrice}', style: TextStyle(fontWeight: FontWeight.w500)),
                       ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('Max Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('₹\${price.maxPrice}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                        Text('Max Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        Text('₹\${price.maxPrice}', style: TextStyle(fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ],
@@ -163,7 +163,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Updated: \${price.date}', style: const TextStyle(fontSize: 12, color: AppColors.textHint)),
+                    const Text('Updated: \${price.date}', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
                     TextButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.notifications_active, size: 16),
@@ -202,7 +202,7 @@ class _MarketScreenState extends State<MarketScreen> {
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
             ),
           ),
         ],

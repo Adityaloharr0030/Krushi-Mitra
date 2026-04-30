@@ -1,7 +1,55 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import 'app_colors.dart';
 
 class AppTheme {
+  static LinearGradient get goldGradient => const LinearGradient(
+    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get headerGradient => const LinearGradient(
+    colors: [AppColors.primaryGreen, AppColors.primaryLight],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientGreen => LinearGradient(
+    colors: [AppColors.primaryGreen.withValues(alpha: 0.1), AppColors.primaryGreen.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientBlue => LinearGradient(
+    colors: [Colors.blue.withValues(alpha: 0.1), Colors.blue.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientAmber => LinearGradient(
+    colors: [AppColors.secondaryAmber.withValues(alpha: 0.1), AppColors.secondaryAmber.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientPurple => LinearGradient(
+    colors: [Colors.purple.withValues(alpha: 0.1), Colors.purple.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientTeal => LinearGradient(
+    colors: [Colors.teal.withValues(alpha: 0.1), Colors.teal.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get cardGradientRed => LinearGradient(
+    colors: [AppColors.error.withValues(alpha: 0.1), AppColors.error.withValues(alpha: 0.05)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -9,7 +57,6 @@ class AppTheme {
         seedColor: AppColors.primaryGreen,
         primary: AppColors.primaryGreen,
         secondary: AppColors.secondaryAmber,
-        background: AppColors.backgroundEarthy,
         surface: AppColors.surfaceWhite,
         error: AppColors.error,
       ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../data/models/post_model.dart';
 import 'create_post_screen.dart';
 import 'package:intl/intl.dart';
@@ -75,7 +75,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+                  backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.2),
                   child: Text(post.farmerName[0], style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 12),

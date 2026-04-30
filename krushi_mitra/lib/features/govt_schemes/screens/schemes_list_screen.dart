@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'scheme_detail_screen.dart';
 import '../../../data/models/scheme_model.dart';
 
@@ -174,7 +174,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: daysLeft <= 7 ? AppColors.error.withOpacity(0.1) : AppColors.primaryGreen.withOpacity(0.1),
+                          color: daysLeft <= 7 ? AppColors.error.withValues(alpha: 0.1) : AppColors.primaryGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: daysLeft <= 7 ? AppColors.error : AppColors.primaryGreen,

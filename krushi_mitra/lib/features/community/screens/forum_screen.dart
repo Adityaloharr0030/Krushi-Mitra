@@ -23,14 +23,14 @@ class ForumScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         backgroundColor: Colors.green.shade100,
-                        child: Text('F\${index + 1}'),
+                        child: const Text('F\${index + 1}'),
                       ),
                       const SizedBox(width: 12),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Ramesh Kumar', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text('Pune, Maharashtra • 2 hrs ago', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text('Ramesh Kumar', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Pune, Maharashtra • 2 hrs ago', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ],

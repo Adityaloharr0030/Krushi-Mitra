@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../auth/screens/auth_screens.dart'; // Auth screens
 
 class ProfileScreen extends StatefulWidget {
@@ -64,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+            backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.2),
             child: const Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
           ),
           const SizedBox(width: 16),
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             secondary: const Icon(Icons.dark_mode, color: AppColors.primaryGreen),
             title: const Text('Dark Mode'),
             value: _darkMode,
-            activeColor: AppColors.secondaryAmber,
+            activeThumbColor: AppColors.secondaryAmber,
             onChanged: (val) => setState(() => _darkMode = val),
           ),
           
@@ -122,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: const Text('Weather & AI Alerts'),
             subtitle: const Text('Spraying limits, extreme rain'),
             value: _weatherAlerts,
-            activeColor: AppColors.secondaryAmber,
+            activeThumbColor: AppColors.secondaryAmber,
             onChanged: (val) => setState(() => _weatherAlerts = val),
           ),
           SwitchListTile(
@@ -130,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: const Text('Government Schemes'),
             subtitle: const Text('New schemes & impending deadlines'),
             value: _schemeAlerts,
-            activeColor: AppColors.secondaryAmber,
+            activeThumbColor: AppColors.secondaryAmber,
             onChanged: (val) => setState(() => _schemeAlerts = val),
           ),
           SwitchListTile(
@@ -138,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: const Text('Mandi Price Alerts'),
             subtitle: const Text('When targeted crops cross thresholds'),
             value: _priceAlerts,
-            activeColor: AppColors.secondaryAmber,
+            activeThumbColor: AppColors.secondaryAmber,
             onChanged: (val) => setState(() => _priceAlerts = val),
           ),
         ],

@@ -105,7 +105,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
   bool _isLoading = true;
   late AnimationController _totalController;
   late Animation<double> _totalAnimation;
-  double _previousTotal = 0;
+  final double _previousTotal = 0;
 
   static const _activities = [
     'Sowing Seeds',
@@ -200,7 +200,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
               color: AppColors.surfaceContainerLow,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
               border: Border.all(
-                color: AppColors.outlineVariant.withOpacity(0.3),
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -242,7 +242,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                         lastDate: DateTime.now(),
                         builder: (ctx, child) => Theme(
                           data: Theme.of(ctx).copyWith(
-                            colorScheme: ColorScheme.dark(
+                            colorScheme: const ColorScheme.dark(
                               primary: AppColors.primary,
                               surface: AppColors.surfaceContainer,
                             ),
@@ -259,18 +259,18 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
+                          const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
                           const SizedBox(width: 12),
                           Text(
                             '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                             style: GoogleFonts.manrope(color: AppColors.onSurface, fontSize: 15),
                           ),
                           const Spacer(),
-                          Icon(Icons.arrow_drop_down, color: AppColors.onSurfaceVariant),
+                          const Icon(Icons.arrow_drop_down, color: AppColors.onSurfaceVariant),
                         ],
                       ),
                     ),
@@ -301,7 +301,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                     style: GoogleFonts.manrope(color: AppColors.onSurface),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Cost (₹)',
                       prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.primary, size: 20),
                     ),
@@ -364,7 +364,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(labelText: label),
       dropdownColor: AppColors.surfaceContainerHigh,
       style: GoogleFonts.manrope(color: AppColors.onSurface),
@@ -465,7 +465,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1B5E20).withOpacity(0.4),
+                color: const Color(0xFF1B5E20).withValues(alpha: 0.4),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -624,7 +624,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -632,7 +632,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withOpacity(0.3),
+              color: AppColors.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(activityIcon, color: AppColors.primary, size: 22),
@@ -696,9 +696,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
         maxChildSize: 0.95,
         minChildSize: 0.5,
         builder: (ctx, scrollCtrl) => Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.surfaceContainerLow,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(

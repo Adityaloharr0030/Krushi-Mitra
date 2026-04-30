@@ -76,7 +76,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 labelText: 'Select State',
                 prefixIcon: Icon(Icons.map_outlined),
               ),
-              value: _selectedState,
+              initialValue: _selectedState,
               items: _states.map((state) {
                 return DropdownMenuItem(
                   value: state,

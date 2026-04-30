@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 
 class DiaryHomeScreen extends StatefulWidget {
@@ -50,7 +50,7 @@ class _DiaryHomeScreenState extends State<DiaryHomeScreen> {
                 final entry = _entries[index];
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: entry['isExpense'] ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
+                    backgroundColor: entry['isExpense'] ? AppColors.error.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                     child: Icon(
                       entry['isExpense'] ? Icons.arrow_outward : Icons.south_west,
                       color: entry['isExpense'] ? AppColors.error : AppColors.success,

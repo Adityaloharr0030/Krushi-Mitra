@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/ai_service.dart';
 
@@ -49,7 +49,7 @@ class _SoilInputScreenState extends State<SoilInputScreen> {
         _recommendation = result;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: \$e')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: \$e')));
     } finally {
       setState(() {
         _isAnalyzing = false;
@@ -98,7 +98,7 @@ class _SoilInputScreenState extends State<SoilInputScreen> {
               const SizedBox(height: 16),
               
               DropdownButtonFormField<String>(
-                value: _soilType,
+                initialValue: _soilType,
                 decoration: const InputDecoration(labelText: 'Soil Type'),
                 items: ['Black', 'Red', 'Alluvial', 'Sandy', 'Loamy']
                     .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
@@ -152,7 +152,7 @@ class _SoilInputScreenState extends State<SoilInputScreen> {
 
   Widget _buildNutrientDropdown(String label, String value, void Function(String?) onChanged) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(labelText: label),
       items: ['Low', 'Medium', 'High']
           .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),

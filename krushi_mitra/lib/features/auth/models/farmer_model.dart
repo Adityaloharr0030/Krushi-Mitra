@@ -37,7 +37,7 @@ class FarmerModel extends Equatable {
         village: '',
         district: '',
         state: 'Maharashtra',
-        crops: [],
+        crops: const [],
         landAcres: 0,
         language: 'hi',
         createdAt: DateTime.now(),

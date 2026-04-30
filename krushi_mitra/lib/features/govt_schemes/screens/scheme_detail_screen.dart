@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../data/models/scheme_model.dart';
 
 class SchemeDetailScreen extends StatelessWidget {
@@ -80,7 +80,7 @@ class SchemeDetailScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             isEligible ? Icons.check_circle : Icons.warning,
             color: isEligible ? AppColors.primaryGreen : AppColors.error,
             size: 32,

@@ -1,9 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/market_provider.dart';
 
 final selectedMarketFilterProvider = StateProvider<String>((ref) => 'All Crops');
@@ -86,7 +84,7 @@ class MarketPricesScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (isBullish ? const Color(0xFF1B5E20) : const Color(0xFFE65100)).withOpacity(0.3),
+            color: (isBullish ? const Color(0xFF1B5E20) : const Color(0xFFE65100)).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -107,7 +105,7 @@ class MarketPricesScreen extends ConsumerWidget {
                       'Market Trend',
                       style: GoogleFonts.manrope(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                     Text(
@@ -123,7 +121,7 @@ class MarketPricesScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Text(
@@ -174,7 +172,7 @@ class MarketPricesScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : AppColors.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(20),
-                border: isSelected ? null : Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+                border: isSelected ? null : Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
               ),
               child: Text(
                 filter,
@@ -210,7 +208,7 @@ class MarketPricesScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [

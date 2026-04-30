@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -138,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -150,7 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.tertiary.withOpacity(0.06),
+                color: AppColors.tertiary.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -171,7 +170,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
@@ -242,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ? []
                               : [
                                   BoxShadow(
-                                    color: AppColors.harvestGold.withOpacity(0.3),
+                                    color: AppColors.harvestGold.withValues(alpha: 0.3),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6),
                                   ),
@@ -295,7 +294,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: AppColors.outlineVariant.withOpacity(0.4))),
+                        Expanded(child: Divider(color: AppColors.outlineVariant.withValues(alpha: 0.4))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
@@ -306,7 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: AppColors.outlineVariant.withOpacity(0.4))),
+                        Expanded(child: Divider(color: AppColors.outlineVariant.withValues(alpha: 0.4))),
                       ],
                     ),
 
@@ -322,7 +321,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: AppColors.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withOpacity(0.3),
+                            color: AppColors.outlineVariant.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Center(
@@ -359,9 +358,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       style: GoogleFonts.manrope(color: AppColors.onSurface),
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         hintText: 'Email Address',
-        prefixIcon: const Icon(Icons.email_outlined, size: 20),
+        prefixIcon: Icon(Icons.email_outlined, size: 20),
       ),
       validator: (v) {
         if (v == null || v.trim().isEmpty) return 'Email is required';

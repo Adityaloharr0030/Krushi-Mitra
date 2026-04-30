@@ -19,6 +19,11 @@ class Farmer {
     required this.preferredLanguage,
   });
 
+  // Firebase User-like compatibility getters
+  String? get displayName => name;
+  bool get isAnonymous => id.isEmpty || name == 'Guest';
+  String? get email => null;
+
   factory Farmer.fromJson(Map<String, dynamic> json) {
     return Farmer(
       id: json['id'] as String,

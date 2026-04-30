@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/error_widget.dart';
-import '../../../shared/widgets/loading_widget.dart';
 import '../../../core/services/ai_service.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -128,7 +126,7 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 48),
-        Icon(
+        const Icon(
           Icons.energy_savings_leaf,
           size: 80,
           color: AppColors.primaryLight,
@@ -208,7 +206,7 @@ class _CropDoctorScreenState extends State<CropDoctorScreen> {
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             colorBlendMode: BlendMode.modulate,
           ),
         ),
