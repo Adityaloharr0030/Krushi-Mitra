@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import 'profile_setup_screen.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundCloud,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -33,26 +36,48 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              const Center(
-                child: Icon(
-                  Icons.agriculture,
-                  size: 80,
-                  color: AppColors.primaryGreen,
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.celestialGradient,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryEmerald.withValues(alpha: 0.2),
+                        blurRadius: 40,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 80,
+                    color: AppColors.primaryEmerald,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
                 'Welcome to Krushi Mitra',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: AppColors.primaryGreen,
+                style: GoogleFonts.outfit(
+                      fontSize: 28,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                     ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
-                'Choose your language / अपनी भाषा चुनें',
+                'CHOOSE YOUR LANGUAGE\nअपनी भाषा चुनें',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: GoogleFonts.plusJakartaSans(
+                  letterSpacing: 1.5,
+                  fontSize: 12,
+                  color: AppColors.primaryEmerald,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 48),
               Expanded(
@@ -61,7 +86,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 2.5,
+                    childAspectRatio: 1.8,
                   ),
                   itemCount: _languages.length,
                   itemBuilder: (context, index) {
@@ -73,38 +98,55 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           _selectedLanguage = lang['code']!;
                         });
                       },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
+                      borderRadius: BorderRadius.circular(20),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primaryGreen
+                              ? AppColors.primaryEmerald.withValues(alpha: 0.1)
                               : AppColors.surfaceWhite,
                           border: Border.all(
                             color: isSelected
-                                ? AppColors.primaryGreen
-                                : Colors.grey.shade300,
+                                ? AppColors.primaryEmerald
+                                : AppColors.outlineVariant.withValues(alpha: 0.3),
+                            width: isSelected ? 2 : 1,
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                                    color: AppColors.primaryEmerald.withValues(alpha: 0.15),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
                                   ),
                                 ]
-                              : null,
+                              : [],
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          lang['name']!,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.surfaceWhite
-                                : AppColors.textPrimary,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              lang['name']!,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? AppColors.primaryEmerald
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                            if (lang['nativeName'] != lang['name'])
+                              Text(
+                                lang['nativeName']!,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? AppColors.primaryEmerald.withValues(alpha: 0.7)
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     );
@@ -113,17 +155,50 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate to profile setup
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileSetupScreen(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    );
-                  },
-                  child: const Text('Continue / आगे बढ़ें'),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileSetupScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.celestialGradient,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Continue / आगे बढ़ें',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

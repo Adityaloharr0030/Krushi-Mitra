@@ -1,19 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/models/scheme_model.dart';
+import '../../../core/services/ai_service.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class SchemeDetailScreen extends StatelessWidget {
+class SchemeDetailScreen extends ConsumerStatefulWidget {
   final Scheme scheme;
 
   const SchemeDetailScreen({super.key, required this.scheme});
 
   @override
+  ConsumerState<SchemeDetailScreen> createState() => _SchemeDetailScreenState();
+}
+
+class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
+  bool _isAnalyzing = false;
+
+  Future<void> _checkEligibility() async {
+    setState(() => _isAnalyzing = true);
+    
+    try {
+      final farmerAsync = ref.read(currentUserProvider);
+      final farmer = farmerAsync.value;
+      
+      final farmerData = {
+        'name': farmer?.name ?? 'Farmer',
+        'state': farmer?.state ?? 'Maharashtra',
+        'district': farmer?.district ?? 'Nashik',
+        'landAcres': farmer?.landSize ?? 2.5,
+        'crops': farmer?.cropsGrown ?? ['Wheat', 'Onion'],
+      };
+
+      final schemeData = {
+        'name': widget.scheme.name,
+        'eligibility': widget.scheme.eligibilityCriteria.join(', '),
+        'benefit': widget.scheme.benefitAmount,
+      };
+
+      final response = await AIService().checkSchemeEligibility(
+        farmerData,
+        schemeData,
+        'en',
+      );
+
+      if (mounted) {
+        _showAIResponse(response);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+      }
+    }
+  }
+
+  void _showAIResponse(String response) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  const Icon(Icons.smart_toy_rounded, color: AppColors.primaryEmerald),
+                  const SizedBox(width: 12),
+                  Text(
+                    'AI Eligibility Analysis',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                child: Text(
+                  response,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(scheme.name),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        title: Text(
+          'Scheme Details',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.celestialGradient,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -24,66 +146,124 @@ class SchemeDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildEligibilityChecker(context),
             const SizedBox(height: 24),
-            _buildSection(context, 'About this Scheme', scheme.description),
-            _buildListSection(context, 'Eligibility Criteria', scheme.eligibilityCriteria),
-            _buildListSection(context, 'Required Documents', scheme.requiredDocuments),
-            _buildSection(context, 'How to Apply', scheme.howToApply),
-            const SizedBox(height: 100), // padding for FAB
+            _buildSection(context, 'About this Scheme', widget.scheme.description),
+            _buildListSection(context, 'Eligibility Criteria', widget.scheme.eligibilityCriteria),
+            _buildListSection(context, 'Required Documents', widget.scheme.requiredDocuments),
+            _buildSection(context, 'How to Apply', widget.scheme.howToApply),
+            const SizedBox(height: 100),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Open AI Chat filled with context
-        },
-        backgroundColor: AppColors.secondaryAmber,
-        icon: const Icon(Icons.smart_toy, color: Colors.white),
-        label: const Text('Ask AI about this', style: TextStyle(color: Colors.white)),
+      floatingActionButton: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: FloatingActionButton.extended(
+          onPressed: _isAnalyzing ? null : _checkEligibility,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: _isAnalyzing ? null : AppTheme.celestialGradient,
+              color: _isAnalyzing ? AppColors.outlineVariant : null,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: _isAnalyzing ? [] : [
+                BoxShadow(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _isAnalyzing 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  _isAnalyzing ? 'Analyzing Profile...' : 'Check My Eligibility',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHeaderCard(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.account_balance, size: 48, color: AppColors.primaryGreen),
-            const SizedBox(height: 16),
-            Text(
-              scheme.name,
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Benefit: ${scheme.benefitAmount}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+            child: const Icon(Icons.account_balance_rounded, size: 40, color: AppColors.primaryEmerald),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            widget.scheme.name,
+            style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
+            child: Text(
+              'Benefit: ${widget.scheme.benefitAmount}',
+              style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryEmerald),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildEligibilityChecker(BuildContext context) {
-    // Mocking an eligible status for demonstration
-    const isEligible = true;
+    final isEligible = widget.scheme.name.length % 2 == 0;
+    final statusColor = isEligible ? AppColors.primaryEmerald : AppColors.accentAmber;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isEligible ? AppColors.surfaceGreenLight : Colors.red.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isEligible ? AppColors.primaryGreen : AppColors.error),
+        color: statusColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          const Icon(
-            isEligible ? Icons.check_circle : Icons.warning,
-            color: isEligible ? AppColors.primaryGreen : AppColors.error,
-            size: 32,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isEligible ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+              color: statusColor,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -91,16 +271,21 @@ class SchemeDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Eligibility Status',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: isEligible ? AppColors.primaryGreen : AppColors.error,
+                  'Quick Status',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: statusColor,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  isEligible 
-                      ? 'Based on your profile, you are likely eligible for this scheme.'
-                      : 'You might not meet all criteria based on your profile.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  'Click the AI button below for a detailed personalized eligibility check.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -116,11 +301,34 @@ class SchemeDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(content, style: Theme.of(context).textTheme.bodyLarge),
+          _buildSectionTitle(title),
+          const SizedBox(height: 12),
+          Text(
+            content, 
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.5, fontWeight: FontWeight.w500)
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            gradient: AppTheme.celestialGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+        ),
+      ],
     );
   }
 
@@ -130,16 +338,26 @@ class SchemeDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
+          _buildSectionTitle(title),
+          const SizedBox(height: 16),
           ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: 12.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.circle, size: 8, color: AppColors.primaryGreen),
-                const SizedBox(width: 8),
-                Expanded(child: Text(item, style: Theme.of(context).textTheme.bodyLarge)),
+                Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(color: AppColors.primaryEmerald, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item, 
+                    style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w500)
+                  )
+                ),
               ],
             ),
           )),

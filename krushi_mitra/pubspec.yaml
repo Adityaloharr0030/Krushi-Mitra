@@ -18,6 +18,8 @@ dependencies:
   cloud_firestore: ^5.0.0
   firebase_storage: ^12.0.0
   firebase_messaging: ^15.0.0
+  firebase_analytics: ^11.0.0
+  firebase_crashlytics: ^4.0.0
 
   # State Management
   flutter_riverpod: ^2.5.1
@@ -57,15 +59,18 @@ dependencies:
   image: ^4.2.0
   uuid: ^4.4.2
   equatable: ^2.0.5
+  google_sign_in: ^6.2.1
 
   path: any
   google_generative_ai: ^0.4.7
+  flutter_markdown: ^0.7.7+1
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   build_runner: ^2.4.12
   riverpod_generator: ^2.4.3
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -77,13 +82,11 @@ flutter:
     - assets/lottie/
     - assets/icons/
 
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        - asset: assets/fonts/Poppins-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Poppins-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700
+
+  # No local fonts, using Google Fonts for Poppins
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 24

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/market_service.dart';
@@ -60,39 +61,44 @@ class _MarketScreenState extends State<MarketScreen> {
 
   Widget _buildFilters() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedState,
-                  decoration: const InputDecoration(labelText: 'State', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                  items: _marketService.getAvailableStates()
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedState = value);
-                      _loadPrices();
-                    }
-                  },
-                ),
-              ),
-            ],
+          DropdownButtonFormField<String>(
+            initialValue: _selectedState,
+            decoration: const InputDecoration(
+              labelText: 'Select State',
+              prefixIcon: Icon(Icons.map_rounded),
+            ),
+            items: _marketService.getAvailableStates()
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _selectedState = value);
+                _loadPrices();
+              }
+            },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextField(
             decoration: const InputDecoration(
               labelText: 'Search Commodity',
-              prefixIcon: Icon(Icons.search),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              prefixIcon: Icon(Icons.search_rounded),
             ),
             onChanged: (value) {
               _selectedCommodity = value;
-              // Debounce in a real app
               _loadPrices();
             },
           ),
@@ -107,73 +113,95 @@ class _MarketScreenState extends State<MarketScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
       itemCount: _prices.length,
       itemBuilder: (context, index) {
         final price = _prices[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      price.commodity,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    price.commodity,
+                    style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const Text(
-                      '₹\${price.modalPrice}/Qtl',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    child: Text(
+                      '₹${price.modalPrice}/Qtl',
+                      style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryEmerald),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text('\${price.variety} • \${price.market}, \${price.district}'),
-                const Divider(height: 24),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Min Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('₹\${price.minPrice}', style: TextStyle(fontWeight: FontWeight.w500)),
-                      ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${price.variety} • ${price.market}, ${price.district}',
+                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Min Range', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text('₹${price.minPrice}', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('Max Range', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text('₹${price.maxPrice}', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 80,
+                width: double.infinity,
+                child: _buildMiniChart(price.commodity),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Updated: ${price.date}', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textHint, fontWeight: FontWeight.w600)),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                    label: const Text('Set Alert'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryEmerald,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('Max Range', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('₹\${price.maxPrice}', style: TextStyle(fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 100,
-                  width: double.infinity,
-                  child: _buildMiniChart(price.commodity),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Updated: \${price.date}', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
-                    TextButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.notifications_active, size: 16),
-                      label: const Text('Set Alert'),
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
-                    )
-                  ],
-                )
-              ],
-            ),
+                  )
+                ],
+              )
+            ],
           ),
         );
       },
@@ -196,13 +224,17 @@ class _MarketScreenState extends State<MarketScreen> {
           LineChartBarData(
             spots: trendData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
             isCurved: true,
-            color: AppColors.primary,
-            barWidth: 2,
+            color: AppColors.primaryEmerald,
+            barWidth: 3,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: AppColors.primary.withValues(alpha: 0.1),
+              gradient: LinearGradient(
+                colors: [AppColors.primaryEmerald.withValues(alpha: 0.2), AppColors.primaryEmerald.withValues(alpha: 0)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
         ],

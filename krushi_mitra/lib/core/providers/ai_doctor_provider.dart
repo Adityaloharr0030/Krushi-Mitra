@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/ai_service.dart';
@@ -39,25 +40,21 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
     if (image != null) {
       state = state.copyWith(selectedImage: image, isLoading: true);
       
-      // Mocking a diagnosis for demonstration/build purposes
-      // In real app, call AIService().analyzeCropImage(File(image.path), 'en')
-      await Future.delayed(const Duration(seconds: 2));
-      
-      state = state.copyWith(
-        isLoading: false,
-        diagnosis: CropDiagnosis(
-          cropName: 'Tomato',
-          healthStatus: 'diseased',
-          diseaseName: 'Early Blight',
-          severity: 'medium',
-          symptoms: 'Dark spots with concentric rings on lower leaves.',
-          causes: 'Fungus Alternaria solani',
-          treatmentOrganic: 'Apply neem oil spray and remove infected leaves.',
-          treatmentChemical: 'Spray Mancozeb or Chlorothalonil as per instructions.',
-          prevention: 'Rotate crops and avoid overhead watering.',
-          confidencePercent: 92.0,
-        ),
-      );
+      try {
+        final diagnosis = await AIService().analyzeCropImage(
+          File(image.path), 
+          'en', // TODO: Get language from a global settings provider
+        );
+        
+        state = state.copyWith(
+          isLoading: false,
+          diagnosis: diagnosis,
+        );
+      } catch (e) {
+        state = state.copyWith(isLoading: false);
+        // Handle error (could add an error field to AIDoctorState)
+        debugPrint('AI Doctor Error: $e');
+      }
     }
   }
 }

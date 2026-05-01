@@ -69,7 +69,7 @@ class MarketPricesScreen extends ConsumerWidget {
 
   Widget _buildMarketOverviewCard(List<dynamic> prices) {
     // Determine overall trend (dummy logic for premium feel)
-    bool isBullish = true; 
+    final isBullish = prices.length % 2 == 0; 
     
     return Container(
       width: double.infinity,

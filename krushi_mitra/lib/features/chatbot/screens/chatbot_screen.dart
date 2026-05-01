@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/providers/weather_provider.dart';
 import '../../../core/providers/chatbot_provider.dart';
+
+import '../../../shared/widgets/custom_app_bar.dart';
 
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
@@ -42,65 +44,12 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        // ... (title and online indicator remain same)
-        backgroundColor: AppColors.surfaceContainerLow,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '🤖 Krushi AI',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Online',
-                  style: GoogleFonts.manrope(
-                    fontSize: 11,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      appBar: CustomAppBar(
+        title: 'Krushi Assistant',
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.onSurfaceVariant),
+            icon: const Icon(Icons.history_rounded, color: Colors.white),
             onPressed: () => ref.read(chatProvider.notifier).clearChat(),
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'EN',
-              style: GoogleFonts.manrope(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
           ),
         ],
       ),
@@ -136,26 +85,51 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest.withValues(alpha: 0.6),
+              color: AppColors.surfaceWhite,
               borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(20),
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+                topRight: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
               ),
-              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Text(
-              text,
-              style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface),
+            child: MarkdownBody(
+              data: text,
+              styleSheet: MarkdownStyleSheet(
+                p: GoogleFonts.plusJakartaSans(
+                  fontSize: 14, 
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+                strong: GoogleFonts.plusJakartaSans(
+                  fontSize: 14, 
+                  color: AppColors.primaryEmerald,
+                  fontWeight: FontWeight.w800,
+                ),
+                listBullet: GoogleFonts.plusJakartaSans(
+                  fontSize: 14, 
+                  color: AppColors.primaryEmerald,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Text(
-              'AI • $time',
-              style: GoogleFonts.manrope(fontSize: 10, color: AppColors.onSurfaceVariant),
+              'Krushi AI Assistant • $time',
+              style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textHint, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -171,27 +145,29 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
             decoration: BoxDecoration(
-              gradient: AppTheme.goldGradient,
+              gradient: AppTheme.celestialGradient,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.harvestGold.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Text(
               text,
-              style: GoogleFonts.manrope(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
-                color: AppColors.onTertiary,
-                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
               ),
             ),
           ),
@@ -199,8 +175,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Text(
-              'Today $time',
-              style: GoogleFonts.manrope(fontSize: 10, color: AppColors.onSurfaceVariant),
+              'You • $time',
+              style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textHint, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -208,92 +184,6 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     );
   }
 
-  Widget _buildAIDetailedResponse() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('⚠️', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Text(
-                  'Patti Peeli = Nitrogen Ki Kami',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildBulletPoint('Urea 5kg/acre daalein'),
-            _buildBulletPoint('Market price: ₹280/bag across Mandis'),
-            _buildBulletPoint('Next 3 days suitable for spray'),
-            const SizedBox(height: 20),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildQuickChip('Organic Solution'),
-                  _buildQuickChip('Chemical Fix'),
-                  _buildQuickChip('Ask More'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBulletPoint(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('•', style: TextStyle(color: AppColors.primary, fontSize: 18)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickChip(String label) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(50),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.manrope(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-        ),
-      ),
-    );
-  }
 
   Widget _buildTypingIndicator() {
     return Padding(
@@ -318,26 +208,30 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
   Widget _buildInputArea(bool isTyping) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        border: Border(top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.2))),
+        color: AppColors.surfaceWhite,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: Column(
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 16),
               child: Row(
                 children: [
-                  _buildSuggestionChip('Wheat yellow leaves?', isTyping),
-                  ref.watch(weatherProvider).maybeWhen(
-                    data: (w) => _buildSuggestionChip('Weather in ${w.cityName}', isTyping),
-                    orElse: () => _buildSuggestionChip('Weather Today', isTyping),
-                  ),
-                  _buildSuggestionChip('Urea price', isTyping),
-                  _buildSuggestionChip('Cotton pests', isTyping),
+                  _buildSuggestionChip('🌾 Wheat disease diagnosis?', isTyping),
+                  _buildSuggestionChip('📅 Crop calendar for Cotton', isTyping),
+                  _buildSuggestionChip('💰 Latest Mandi prices', isTyping),
+                  _buildSuggestionChip('🏛️ Subsidy schemes', isTyping),
                 ],
               ),
             ),
@@ -346,42 +240,49 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             children: [
               Expanded(
                 child: Container(
-                  height: 52,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(26),
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: TextField(
                       controller: _messageController,
                       enabled: !isTyping,
-                      style: GoogleFonts.manrope(color: AppColors.onSurface, fontSize: 14),
+                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
-                        hintText: 'Type your question...',
+                        hintText: 'Ask anything about farming...',
                         border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintStyle: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
+                        hintStyle: GoogleFonts.plusJakartaSans(color: AppColors.textHint, fontWeight: FontWeight.w500),
                       ),
                       onSubmitted: (val) => _handleSend(),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: isTyping ? null : _handleSend,
                 child: Container(
-                  width: 52,
-                  height: 52,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: isTyping ? AppColors.surfaceContainerHighest : AppColors.primary,
+                    gradient: isTyping ? null : AppTheme.celestialGradient,
+                    color: isTyping ? AppColors.outlineVariant : null,
                     shape: BoxShape.circle,
+                    boxShadow: isTyping ? null : [
+                      BoxShadow(
+                        color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
-                    isTyping ? Icons.hourglass_empty : Icons.send_rounded, 
-                    color: isTyping ? AppColors.onSurfaceVariant : AppColors.onPrimary, 
+                    isTyping ? Icons.hourglass_top_rounded : Icons.send_rounded, 
+                    color: Colors.white, 
                     size: 24
                   ),
                 ),
@@ -407,18 +308,26 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         _handleSend();
       },
       child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest,
+          color: AppColors.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           label,
-          style: GoogleFonts.manrope(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
-            color: AppColors.onSurface,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryEmerald,
           ),
         ),
       ),

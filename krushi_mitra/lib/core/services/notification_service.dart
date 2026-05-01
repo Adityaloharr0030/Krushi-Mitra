@@ -1,6 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
+// Top-level function for background message handling
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // This must be a top-level function (not a class method)
+  debugPrint("Handling a background message: ${message.messageId}");
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -10,7 +17,10 @@ class NotificationService {
 
   Future<void> initialize() async {
     try {
-      // 1. Request Permission
+      // 1. Set background handler
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+      // 2. Request Permission
       NotificationSettings settings = await _fcm.requestPermission(
         alert: true,
         announcement: false,
@@ -23,24 +33,29 @@ class NotificationService {
 
       debugPrint('User granted permission: ${settings.authorizationStatus}');
 
-      // 2. Get FCM Token
+      // 3. Get FCM Token
       String? token = await _fcm.getToken();
       debugPrint('FCM Token: $token');
-      // Here you would save the token to Firestore under the Farmer's document
+      // In a real app, you would save this token to Firestore for targeted notifications
 
-      // 3. Configure foreground message handling
+      // 4. Configure foreground message handling
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('Got a message whilst in the foreground!');
         debugPrint('Message data: ${message.data}');
 
         if (message.notification != null) {
-          debugPrint('Message also contained a notification: ${message.notification}');
-          // Optionally trigger a local notification so it shows up while app is open
+          debugPrint('Message also contained a notification: ${message.notification?.title}');
         }
       });
 
-      // Subscribe to topics
-      await subscribeToTopic('weather_alerts_nashik');
+      // 5. Handle notification clicks when app is in background/terminated
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        debugPrint('A new onMessageOpenedApp event was published!');
+      });
+
+      // Subscribe to general topics
+      await subscribeToTopic('all_farmers');
+      await subscribeToTopic('weather_alerts');
       
     } catch (e) {
       debugPrint("Failed to initialize FCM: $e");
@@ -48,12 +63,20 @@ class NotificationService {
   }
 
   Future<void> subscribeToTopic(String topic) async {
-    await _fcm.subscribeToTopic(topic);
-    debugPrint('Subscribed to $topic');
+    try {
+      await _fcm.subscribeToTopic(topic);
+      debugPrint('Subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('Error subscribing to topic $topic: $e');
+    }
   }
 
   Future<void> unsubscribeFromTopic(String topic) async {
-    await _fcm.unsubscribeFromTopic(topic);
-    debugPrint('Unsubscribed from $topic');
+    try {
+      await _fcm.unsubscribeFromTopic(topic);
+      debugPrint('Unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('Error unsubscribing from topic $topic: $e');
+    }
   }
 }

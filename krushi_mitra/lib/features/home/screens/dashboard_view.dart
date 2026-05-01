@@ -14,63 +14,68 @@ class DashboardView extends ConsumerWidget {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'सुप्रभात';
-    if (hour < 17) return 'नमस्कार';
-    return 'शुभ संध्या';
+    if (hour < 12) return 'Suprabhat';
+    if (hour < 17) return 'Namaste';
+    return 'Shubh Sandhya';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
+    final userAsync = ref.watch(currentUserProvider);
     final weatherAsync = ref.watch(weatherProvider);
 
-    final userName = user?.displayName?.split(' ').first ??
-        (user?.isAnonymous == true ? 'Kisan' : user?.email?.split('@').first ?? 'Kisan');
+    return userAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
+      data: (user) {
+        final userName = user?.name.split(' ').first ?? 'Farmer';
 
-    return CustomScrollView(
-      slivers: [
-        _buildSliverAppBar(context, ref),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildGreetingSection(userName),
-                const SizedBox(height: 28),
-                const MarketPriceSlider(),
-                const SizedBox(height: 28),
-                _buildWeatherSection(context, weatherAsync),
-                const SizedBox(height: 28),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Quick Actions',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
+        return CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(context, ref),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildGreetingSection(userName),
+                    const SizedBox(height: 28),
+                    const MarketPriceSlider(),
+                    const SizedBox(height: 28),
+                    _buildWeatherSection(context, weatherAsync),
+                    const SizedBox(height: 28),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Smart Services',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: QuickActionGrid(),
+                    ),
+                    const SizedBox(height: 28),
+                    _buildSchemeReminders(context),
+                    const SizedBox(height: 120),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: QuickActionGrid(),
-                ),
-                const SizedBox(height: 28),
-                _buildSchemeDeadlines(context),
-                const SizedBox(height: 120),
-              ],
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -87,7 +92,7 @@ class DashboardView extends ConsumerWidget {
             height: 36,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1B5E20), Color(0xFF00695C)],
+                colors: [Color(0xFF059669), Color(0xFF0891B2)],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -108,7 +113,7 @@ class DashboardView extends ConsumerWidget {
       actions: [
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.notifications_none_rounded, color: AppColors.onSurface),
+          icon: Icon(Icons.notifications_none_rounded, color: AppColors.onSurface),
         ),
         const SizedBox(width: 8),
       ],
@@ -133,10 +138,11 @@ class DashboardView extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'आपका खेत, आपकी उन्नति',
+            'Your Digital Farm Partner',
             style: GoogleFonts.manrope(
               color: AppColors.onSurfaceVariant,
               fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -154,7 +160,7 @@ class DashboardView extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Local Weather',
+                'Regional Weather',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -167,10 +173,10 @@ class DashboardView extends ConsumerWidget {
                   MaterialPageRoute(builder: (_) => const WeatherScreen()),
                 ),
                 child: Text(
-                  'View Full',
+                  'Full Forecast',
                   style: GoogleFonts.manrope(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -187,10 +193,11 @@ class DashboardView extends ConsumerWidget {
     );
   }
 
-  Widget _buildSchemeDeadlines(BuildContext context) {
+  Widget _buildSchemeReminders(BuildContext context) {
+    // Official upcoming deadlines for real Indian schemes
     final schemes = [
-      {'icon': '📋', 'title': 'PM-Kisan Update', 'subtitle': '3 days left to verify', 'urgent': true},
-      {'icon': '🌱', 'title': 'PMFBY Registration', 'subtitle': 'Last date: 30 Apr 2026', 'urgent': false},
+      {'icon': '📜', 'title': 'PM-Kisan KYC', 'subtitle': 'Mandatory verification', 'urgent': true},
+      {'icon': '☁️', 'title': 'Kharif Insurance', 'subtitle': 'Enrollment starts soon', 'urgent': false},
     ];
 
     return Padding(
@@ -199,7 +206,7 @@ class DashboardView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '⏰ Scheme Deadlines',
+            '⏰ Important Reminders',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -220,12 +227,12 @@ class DashboardView extends ConsumerWidget {
                   margin: const EdgeInsets.only(right: 14),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
+                    color: AppColors.surfaceObsidian,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isUrgent
                           ? AppColors.error.withValues(alpha: 0.3)
-                          : AppColors.outlineVariant.withValues(alpha: 0.2),
+                          : AppColors.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -263,6 +270,7 @@ class DashboardView extends ConsumerWidget {
                               style: GoogleFonts.manrope(
                                 color: isUrgent ? AppColors.error : AppColors.onSurfaceVariant,
                                 fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

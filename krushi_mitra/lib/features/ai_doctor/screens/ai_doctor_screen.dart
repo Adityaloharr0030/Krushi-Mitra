@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/ai_doctor_provider.dart';
 import '../../../core/services/ai_service.dart';
 
@@ -75,27 +76,33 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 120.0,
+      expandedHeight: 140.0,
       floating: false,
       pinned: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
         title: Text(
-          '🤖 AI Crop Doctor',
+          'AI Crop Doctor',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.onSurface,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
           ),
         ),
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E20), Color(0xFF0D1F12)],
-            ),
+          decoration: BoxDecoration(
+            gradient: AppTheme.celestialGradient,
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Icon(Icons.psychology_outlined, size: 150, color: Colors.white.withValues(alpha: 0.1)),
+              ),
+            ],
           ),
         ),
       ),
@@ -107,58 +114,72 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
       onTap: () => ref.read(aiDoctorProvider.notifier).pickImage(ImageSource.camera),
       child: Container(
         width: double.infinity,
-        height: 200,
+        height: 240,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(24),
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           image: state.selectedImage != null
               ? DecorationImage(
                   image: FileImage(state.selectedImageFile!),
                   fit: BoxFit.cover,
                 )
-              : const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=1000&auto=format&fit=crop'),
-                  fit: BoxFit.cover,
-                  opacity: 0.3,
-                ),
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: state.selectedImage != null ? 0 : 5, sigmaY: state.selectedImage != null ? 0 : 5),
+            filter: ImageFilter.blur(sigmaX: state.selectedImage != null ? 0 : 0, sigmaY: state.selectedImage != null ? 0 : 0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (state.selectedImage == null) ...[
-                  const Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.primary),
-                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_rounded, size: 48, color: AppColors.primaryEmerald),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    'Tap to take photo',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                    'Capture Crop Image',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(height: 1, width: 40, color: AppColors.outlineVariant),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('OR', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
-                      ),
-                      Container(height: 1, width: 40, color: AppColors.outlineVariant),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Diagnose diseases instantly with AI',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _buildSecondaryButton('📁 Browse Gallery', () => ref.read(aiDoctorProvider.notifier).pickImage(ImageSource.gallery)),
+                  const SizedBox(height: 20),
+                  _buildSecondaryButton('📁 Pick from Gallery', () => ref.read(aiDoctorProvider.notifier).pickImage(ImageSource.gallery)),
                 ] else if (state.isLoading) ...[
-                  const CircularProgressIndicator(color: AppColors.primary),
-                  const SizedBox(height: 12),
-                  Text('Analyzing crop...', style: GoogleFonts.manrope(color: Colors.white)),
+                  const CircularProgressIndicator(color: AppColors.primaryEmerald),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Analyzing Image...',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 10)],
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -172,18 +193,18 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.2)),
         ),
         child: Text(
           text,
-          style: GoogleFonts.manrope(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
+            fontWeight: FontWeight.w800,
+            color: AppColors.primaryEmerald,
           ),
         ),
       ),
@@ -193,54 +214,69 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
   Widget _buildDiagnosisResult(CropDiagnosis diagnosis) {
     final sev = diagnosis.severity.toLowerCase();
     final severityColor = sev.contains('high') || sev.contains('severe')
-        ? const Color(0xFFC62828)
+        ? AppColors.error
         : sev.contains('medium')
-            ? const Color(0xFFE67E22)
-            : const Color(0xFF2E7D32);
+            ? AppColors.accentAmber
+            : AppColors.success;
 
     final statusEmoji = diagnosis.isHealthy ? '✅' : '⚠️';
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(32),
         border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Container(
-            height: 8,
+            height: 10,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [severityColor, severityColor.withValues(alpha: 0.7)]),
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+              color: severityColor,
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(statusEmoji, style: const TextStyle(fontSize: 24)),
-                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: severityColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(statusEmoji, style: const TextStyle(fontSize: 24)),
+                    ),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             diagnosis.diseaseName,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurface,
+                            style: GoogleFonts.outfit(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           Text(
-                            'Crop: ${diagnosis.cropName}',
-                            style: GoogleFonts.manrope(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
+                            'Detected in: ${diagnosis.cropName}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -248,24 +284,28 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
                 Text(
                   diagnosis.symptoms,
-                  style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, 
+                    color: AppColors.textSecondary,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                const SizedBox(height: 24),
+                Row(
                   children: [
                     _buildChip(
-                      'Confidence: ${diagnosis.confidencePercent.round()}% 🎯',
-                      AppColors.surfaceContainerHighest,
-                      AppColors.onSurface,
+                      '${diagnosis.confidencePercent.round()}% Confidence',
+                      AppColors.primaryEmerald.withValues(alpha: 0.1),
+                      AppColors.primaryEmerald,
                     ),
+                    const SizedBox(width: 10),
                     _buildChip(
                       diagnosis.severity.toUpperCase(),
-                      severityColor.withValues(alpha: 0.2),
+                      severityColor.withValues(alpha: 0.1),
                       severityColor,
                     ),
                   ],
@@ -318,31 +358,32 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
     return Column(
       children: [
         Container(
-          height: 50,
-          padding: const EdgeInsets.all(4),
+          height: 56,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(25),
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: TabBar(
             controller: _tabController,
             indicator: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(25),
+              gradient: AppTheme.celestialGradient,
+              borderRadius: BorderRadius.circular(22),
             ),
             indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: AppColors.onPrimary,
-            unselectedLabelColor: AppColors.onSurfaceVariant,
-            labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 14),
+            labelColor: Colors.white,
+            unselectedLabelColor: AppColors.textSecondary,
+            labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14),
             tabs: const [
-              Tab(text: 'Organic'),
-              Tab(text: 'Chemical'),
+              Tab(text: 'Organic Solution'),
+              Tab(text: 'Chemical Control'),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         SizedBox(
-          height: 220,
+          height: 240,
           child: TabBarView(
             controller: _tabController,
             children: [
@@ -446,36 +487,28 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
   Widget _buildActionButtons() {
     return Column(
       children: [
-        ElevatedButton(
+        ElevatedButton.icon(
           onPressed: () {},
+          icon: const Icon(Icons.share_rounded, size: 20),
+          label: Text('Share Full Report', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56),
-            backgroundColor: AppColors.tertiary,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.share_outlined, size: 20),
-              SizedBox(width: 8),
-              Text('Share Report'),
-            ],
+            backgroundColor: AppColors.primaryEmerald,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 0,
           ),
         ),
         const SizedBox(height: 12),
-        OutlinedButton(
+        OutlinedButton.icon(
           onPressed: () {},
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+          label: Text('Ask AI More Questions', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56),
-            side: const BorderSide(color: AppColors.outlineVariant),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          ),
-          child: Text(
-            '💬 Ask AI More',
-            style: GoogleFonts.manrope(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.onSurface,
-            ),
+            foregroundColor: AppColors.primaryEmerald,
+            side: const BorderSide(color: AppColors.primaryEmerald, width: 1.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
         ),
       ],

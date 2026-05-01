@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key});
@@ -14,26 +15,31 @@ class CalculatorScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text(
-            '🧮 Agri Calculators',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+            'Agri Calculators',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
           ),
-          backgroundColor: AppColors.surfaceContainerLow,
           elevation: 0,
-          centerTitle: false,
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.celestialGradient,
+            ),
+          ),
           bottom: TabBar(
             isScrollable: true,
-            labelColor: AppColors.tertiary,
-            unselectedLabelColor: AppColors.onSurfaceVariant,
-            indicatorColor: AppColors.tertiary,
-            indicatorWeight: 3,
-            labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 13),
-            unselectedLabelStyle: GoogleFonts.manrope(fontSize: 13),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+            indicatorColor: Colors.white,
+            indicatorWeight: 4,
+            indicatorSize: TabBarIndicatorSize.label,
+            labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14),
+            unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
             tabAlignment: TabAlignment.start,
             tabs: const [
-              Tab(text: '🌱 Fertilizer'),
-              Tab(text: '🌾 Seed Rate'),
-              Tab(text: '🧪 Pesticide'),
-              Tab(text: '💧 Irrigation'),
+              Tab(text: 'Fertilizer'),
+              Tab(text: 'Seed Rate'),
+              Tab(text: 'Pesticide'),
+              Tab(text: 'Irrigation'),
             ],
           ),
         ),
@@ -60,24 +66,44 @@ class _CalcCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w700,
-              fontSize: 17,
-              color: AppColors.onSurface,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.celestialGradient,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           ...children,
         ],
       ),
@@ -103,23 +129,30 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -128,17 +161,19 @@ class _ResultCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.onSurfaceVariant,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.textSecondary,
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   '$value $unit',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: color,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.outfit(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
@@ -181,14 +216,30 @@ Widget _buildNumField(TextEditingController ctrl, String label, String suffix) {
 }
 
 Widget _buildCalcButton(String label, VoidCallback onTap) {
-  return SizedBox(
+  return Container(
     width: double.infinity,
-    height: 54,
+    height: 56,
+    decoration: BoxDecoration(
+      gradient: AppTheme.celestialGradient,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+          blurRadius: 15,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
     child: ElevatedButton(
       onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15),
+        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white),
       ),
     ),
   );
@@ -389,25 +440,25 @@ class _SeedRateCalculatorState extends State<_SeedRateCalculator> {
               label: 'Total Seed Required',
               value: _result!['totalSeed'].toStringAsFixed(1),
               unit: _result!['unit'],
-              color: AppColors.harvestGold,
+              color: AppColors.accentAmber,
               icon: Icons.agriculture_rounded,
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.tertiaryContainer.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.2)),
+                color: AppColors.accentAmber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.accentAmber.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lightbulb_outline, color: AppColors.harvestGold, size: 18),
-                  const SizedBox(width: 10),
+                  const Icon(Icons.lightbulb_outline_rounded, color: AppColors.accentAmber, size: 20),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       _result!['note'],
-                      style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -537,26 +588,26 @@ class _PesticideCalculatorState extends State<_PesticideCalculator> {
               label: 'Knapsack Tanks (15L each)',
               value: _result!['tanks'].toString(),
               unit: 'tanks',
-              color: AppColors.harvestGold,
+              color: AppColors.accentAmber,
               icon: Icons.backpack_rounded,
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.errorContainer.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+                color: AppColors.error.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.health_and_safety_outlined, color: AppColors.error, size: 18),
-                  const SizedBox(width: 10),
+                  const Icon(Icons.health_and_safety_outlined, color: AppColors.error, size: 20),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      '⚠️ Safety: ${_result!['note']}',
-                      style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant),
+                      'Safety: ${_result!['note']}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -687,7 +738,7 @@ class _IrrigationCalculatorState extends State<_IrrigationCalculator> {
               label: 'Irrigation Interval',
               value: _result!['interval'].toString(),
               unit: 'days',
-              color: AppColors.harvestGold,
+              color: AppColors.accentAmber,
               icon: Icons.schedule_rounded,
             ),
             _ResultCard(
@@ -699,20 +750,20 @@ class _IrrigationCalculatorState extends State<_IrrigationCalculator> {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.secondaryContainer.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+                color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.tips_and_updates_rounded, color: AppColors.secondary, size: 18),
-                  const SizedBox(width: 10),
+                  const Icon(Icons.tips_and_updates_rounded, color: AppColors.primaryEmerald, size: 20),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       _result!['tip'],
-                      style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],

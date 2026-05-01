@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/weather_provider.dart';
 import '../../../core/services/weather_service.dart';
 
@@ -68,88 +69,99 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeroWeatherCard(dynamic weather) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: _getWeatherGradient(weather.condition),
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Opacity(
-              opacity: 0.1,
-              child: Icon(_getWeatherIcon(weather.condition), size: 160, color: Colors.white),
+  Widget _buildHeroWeatherCard(WeatherData weather) {
+    return Center(
+      child: Container(
+        height: 300,
+        width: 300,
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: AppTheme.celestialGradient,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+              blurRadius: 50,
+              spreadRadius: 5,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
+              ),
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${weather.temperature.round()}°C',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          weather.condition,
-                          style: GoogleFonts.manrope(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Icon(_getWeatherIcon(weather.condition), size: 60, color: const Color(0xFFFFD54F)),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 Text(
-                  weather.cityName,
-                  style: GoogleFonts.manrope(fontSize: 13, color: Colors.white70),
+                  '${weather.temperature.round()}°',
+                  style: GoogleFonts.outfit(
+                    fontSize: 84,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -4.0,
+                  ),
+                ),
+                Text(
+                  weather.condition.toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 3.0,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                const Divider(color: Colors.white12),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildWeatherStat('Feels like', '${weather.feelsLike.round()}°C'),
-                    _buildWeatherStat('Humidity', '${weather.humidity}%'),
-                    _buildWeatherStat('Wind Speed', '${weather.windSpeed} km/h'),
-                  ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    weather.cityName,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            Positioned(
+              bottom: 25,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.water_drop_rounded, size: 14, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${weather.humidity}% Humidity',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11, 
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  List<Color> _getWeatherGradient(String condition) {
-    condition = condition.toLowerCase();
-    if (condition.contains('rain')) return [const Color(0xFF1976D2), const Color(0xFF0D47A1)];
-    if (condition.contains('cloud')) return [const Color(0xFF607D8B), const Color(0xFF37474F)];
-    return [const Color(0xFF2E7D32), const Color(0xFF1B5E20)];
   }
 
   IconData _getWeatherIcon(String condition) {
@@ -163,26 +175,6 @@ class WeatherScreen extends ConsumerWidget {
   String _getDayName(int weekday) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return days[weekday - 1];
-  }
-
-  Widget _buildWeatherStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.manrope(fontSize: 12, color: Colors.white60),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.manrope(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -199,7 +191,7 @@ class WeatherScreen extends ConsumerWidget {
   Widget _buildHourlyForecast(WeatherData weather) {
     final List<HourlyForecast> hourly = weather.hourlyForecasts;
     return SizedBox(
-      height: 110,
+      height: 130,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: hourly.length,
@@ -207,21 +199,27 @@ class WeatherScreen extends ConsumerWidget {
           final hour = hourly[index];
           final timeStr = "${hour.time.hour}:00";
           return Container(
-            width: 90,
+            width: 85,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.surfaceWhite,
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(timeStr, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                Icon(_getWeatherIcon(hour.condition), size: 24, color: AppColors.primary),
-                const SizedBox(height: 4),
-                Text('${hour.temperature.round()}°', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                Text(
+                  timeStr,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                Icon(_getWeatherIcon(hour.condition), size: 28, color: AppColors.primaryEmerald),
+                const SizedBox(height: 12),
+                Text(
+                  '${hour.temperature.round()}°',
+                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                ),
               ],
             ),
           );
@@ -237,24 +235,30 @@ class WeatherScreen extends ConsumerWidget {
         final dayName = _getDayName(day.date.weekday);
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
               Expanded(
                 flex: 2,
-                child: Text(dayName, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                child: Text(
+                  dayName.toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: 1.5),
+                ),
               ),
-              Expanded(
-                child: Icon(_getWeatherIcon(day.condition), size: 24, color: AppColors.primary),
-              ),
+              Icon(_getWeatherIcon(day.condition), size: 24, color: AppColors.primaryEmerald),
+              const SizedBox(width: 20),
               Expanded(
                 flex: 2,
-                child: Text('${day.maxTemp.round()}° / ${day.minTemp.round()}°', textAlign: TextAlign.center, style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface)),
+                child: Text(
+                  '${day.maxTemp.round()}° / ${day.minTemp.round()}°',
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
               ),
             ],
           ),
@@ -263,40 +267,42 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFarmingAdvisories(dynamic weather) {
+  Widget _buildFarmingAdvisories(WeatherData weather) {
     final String advice = weather.farmingAdvice;
-    // Split into a list of tips (assuming it's a single string, we just create a 1-item list)
-    final List<String> tips = [advice];
-    final colors = [const Color(0xFF2E7D32), const Color(0xFFF57F17), const Color(0xFF1565C0)];
-    
-    return Column(
-      children: List.generate(tips.length, (i) {
-        final color = colors[i % colors.length];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primaryEmerald.withValues(alpha: 0.08), AppColors.primaryEmerald.withValues(alpha: 0.02)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Text('✨', style: TextStyle(fontSize: 18)),
           ),
-          child: Row(
-            children: [
-              const Text('💡', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  tips[i],
-                  style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurface),
-                ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              advice,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14, 
+                color: AppColors.textPrimary,
+                height: 1.6,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
           ),
-        );
-      }),
+        ],
+      ),
     );
   }
-
-  // Removed unused _buildWeatherAlert method
-
 }

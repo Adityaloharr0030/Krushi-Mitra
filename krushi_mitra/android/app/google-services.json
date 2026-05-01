@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1024024620084",
+    "project_id": "krushi-mitra-dd431",
+    "storage_bucket": "krushi-mitra-dd431.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1024024620084:android:9736c2a0350d5fba006e61",
+        "android_client_info": {
+          "package_name": "app.krushi_Mitra"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1024024620084-dt2r0i0a4uf4bv54odq1otde67c8bagj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDd5Q8iDR0hzuXRDqsowPgF534O_g3kKEo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1024024620084-dt2r0i0a4uf4bv54odq1otde67c8bagj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

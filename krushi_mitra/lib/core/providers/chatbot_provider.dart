@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/ai_service.dart';
 
 class ChatMessage {
   final String role;
@@ -28,18 +30,31 @@ class ChatState {
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier() : super(ChatState());
 
-  void sendMessage(String text, String lang) {
+  Future<void> sendMessage(String text, String lang) async {
     state = state.copyWith(
       messages: [...state.messages, ChatMessage(role: 'user', text: text)],
       isTyping: true,
     );
-    // Mock response
-    Future.delayed(const Duration(seconds: 1), () {
+
+    try {
+      final history = state.messages.map((m) => {
+        'role': m.role == 'user' ? 'user' : 'model',
+        'content': m.text,
+      }).toList();
+
+      final response = await AIService().chat(history, text, lang);
+
       state = state.copyWith(
-        messages: [...state.messages, ChatMessage(role: 'bot', text: 'I am your Krushi Mitra assistant. How can I help with your farming needs?')],
+        messages: [...state.messages, ChatMessage(role: 'bot', text: response)],
         isTyping: false,
       );
-    });
+    } catch (e) {
+      state = state.copyWith(
+        isTyping: false,
+        messages: [...state.messages, ChatMessage(role: 'bot', text: 'Sorry, I encountered an error. Please try again.')],
+      );
+      debugPrint('Chat Error: $e');
+    }
   }
 
   void clearChat() {

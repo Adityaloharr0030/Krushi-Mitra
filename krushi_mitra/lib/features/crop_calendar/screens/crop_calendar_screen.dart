@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CropCalendarScreen extends StatelessWidget {
   const CropCalendarScreen({super.key});
@@ -17,25 +18,68 @@ class CropCalendarScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Crop Calendar (फसल कैलेंडर)'),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(
+          'Crop Calendar',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.celestialGradient,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.primaryContainer,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Soybean (JS 335)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark)),
-                    Text('Kharif Season', style: TextStyle(color: AppColors.textSecondary)),
-                  ],
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                OutlinedButton(
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Text('🌱', style: TextStyle(fontSize: 24)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Soybean (JS 335)',
+                        style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                      ),
+                      Text(
+                        'Kharif Season • 120 Days',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
                   onPressed: () {},
-                  child: const Text('Change Crop'),
+                  icon: const Icon(Icons.swap_horiz_rounded, color: AppColors.primaryEmerald),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                    padding: const EdgeInsets.all(12),
+                  ),
                 ),
               ],
             ),
@@ -89,25 +133,37 @@ class TimelineTile extends StatelessWidget {
         children: [
           // Timeline logic
           SizedBox(
-            width: 80,
+            width: 90,
             child: Column(
               children: [
-                if (!isFirst) Container(height: 20, width: 2, color: isActive ? AppColors.primary : AppColors.divider),
+                if (!isFirst) Container(height: 20, width: 3, decoration: BoxDecoration(
+                  color: isActive ? AppColors.primaryEmerald : AppColors.outlineVariant.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
+                )),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.primary : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: isActive ? AppTheme.celestialGradient : null,
+                    color: isActive ? null : AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isActive ? Colors.transparent : AppColors.outlineVariant.withValues(alpha: 0.5)),
+                    boxShadow: isActive ? [
+                      BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))
+                    ] : null,
                   ),
                   child: Text(
                     month,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
                       color: isActive ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                 ),
-                if (!isLast) Expanded(child: Container(width: 2, color: isActive ? AppColors.primary : AppColors.divider)),
+                if (!isLast) Expanded(child: Container(width: 3, decoration: BoxDecoration(
+                  color: isActive ? AppColors.primaryEmerald : AppColors.outlineVariant.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
+                ))),
               ],
             ),
           ),
@@ -115,32 +171,67 @@ class TimelineTile extends StatelessWidget {
           // Content Card
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              child: Card(
-                elevation: isActive ? 4 : 1,
-                color: isActive ? Colors.white : AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: isActive ? AppColors.primaryLight : Colors.transparent),
+              padding: const EdgeInsets.only(bottom: 32.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isActive ? 0.08 : 0.03),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(phase, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(isActive ? Icons.bolt_rounded : Icons.schedule_rounded, 
+                               color: isActive ? AppColors.primaryEmerald : AppColors.textHint, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            phase, 
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w800, 
+                              fontSize: 16,
+                              color: AppColors.textPrimary,
+                            )
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       ...tasks.map((task) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
+                            padding: const EdgeInsets.only(bottom: 12.0),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 4.0),
-                                  child: Icon(Icons.circle, size: 8, color: AppColors.accent),
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: isActive ? AppColors.primaryEmerald : AppColors.textHint,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(task)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    task,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           )),

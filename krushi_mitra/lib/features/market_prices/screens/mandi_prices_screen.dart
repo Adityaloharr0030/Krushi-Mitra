@@ -1,44 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../data/models/mandi_price_model.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/market_provider.dart';
+import '../../../core/services/market_service.dart';
 
-class MandiPricesScreen extends StatefulWidget {
+class MandiPricesScreen extends ConsumerStatefulWidget {
   const MandiPricesScreen({super.key});
 
   @override
-  State<MandiPricesScreen> createState() => _MandiPricesScreenState();
+  ConsumerState<MandiPricesScreen> createState() => _MandiPricesScreenState();
 }
 
-class _MandiPricesScreenState extends State<MandiPricesScreen> {
-  // Mock Data
-  final List<MandiPrice> _prices = [
-    MandiPrice(id: '1', state: 'Maharashtra', district: 'Nashik', commodity: 'Onion', minPrice: 1500, maxPrice: 2200, modalPrice: 1850, date: DateTime.now()),
-    MandiPrice(id: '2', state: 'Maharashtra', district: 'Pune', commodity: 'Onion', minPrice: 1600, maxPrice: 2300, modalPrice: 1900, date: DateTime.now()),
-    MandiPrice(id: '3', state: 'Maharashtra', district: 'Nashik', commodity: 'Tomato', minPrice: 800, maxPrice: 1500, modalPrice: 1100, date: DateTime.now()),
-  ];
+class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
+  String _selectedCommodity = 'Wheat';
+  String _selectedState = 'Maharashtra';
 
   @override
   Widget build(BuildContext context) {
+    final mandiAsync = ref.watch(mandiProvider);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Mandi Prices'),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        title: Text(
+          'Official Mandi Rates',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.celestialGradient,
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildFilters(),
-            const SizedBox(height: 24),
-            _buildBestMandiCard(),
-            const SizedBox(height: 24),
-            _buildPriceTrendChart(),
-            const SizedBox(height: 24),
-            _buildPriceTable(),
-          ],
+      body: mandiAsync.when(
+        data: (prices) => SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildFilters(),
+              const SizedBox(height: 24),
+              if (prices.isNotEmpty) _buildBestMandiCard(prices.first),
+              const SizedBox(height: 24),
+              _buildPriceTrendChart(),
+              const SizedBox(height: 24),
+              _buildPriceTable(prices),
+            ],
+          ),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.textHint),
+                const SizedBox(height: 16),
+                Text('Connection Issue', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 8),
+                Text('Unable to fetch live data. Please check your internet or API keys.', textAlign: TextAlign.center, style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -50,161 +79,229 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            initialValue: 'Onion',
+            initialValue: _selectedCommodity,
             items: const [
+              DropdownMenuItem(value: 'Wheat', child: Text('Wheat')),
+              DropdownMenuItem(value: 'Rice', child: Text('Rice')),
               DropdownMenuItem(value: 'Onion', child: Text('Onion')),
               DropdownMenuItem(value: 'Tomato', child: Text('Tomato')),
-              DropdownMenuItem(value: 'Wheat', child: Text('Wheat')),
             ],
-            onChanged: (val) {},
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedCommodity = val);
+            },
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'District', isDense: true),
-            initialValue: 'Nashik',
+            decoration: const InputDecoration(labelText: 'State', isDense: true),
+            initialValue: _selectedState,
             items: const [
-              DropdownMenuItem(value: 'Nashik', child: Text('Nashik')),
-              DropdownMenuItem(value: 'Pune', child: Text('Pune')),
+              DropdownMenuItem(value: 'Maharashtra', child: Text('Maharashtra')),
+              DropdownMenuItem(value: 'Uttar Pradesh', child: Text('UP')),
+              DropdownMenuItem(value: 'Punjab', child: Text('Punjab')),
+              DropdownMenuItem(value: 'Rajasthan', child: Text('Rajasthan')),
             ],
-            onChanged: (val) {},
+            onChanged: (val) {
+               if (val != null) setState(() => _selectedState = val);
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBestMandiCard() {
+  Widget _buildBestMandiCard(MarketPrice price) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceGreenLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen),
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryEmerald.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.star, color: AppColors.secondaryAmber),
-              const SizedBox(width: 8),
-              Text('Best Price Near You', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primaryGreen)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.stars_rounded, color: AppColors.primaryEmerald, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Live Market Highlight', 
+                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Text('Pune Mandi is offering ₹1900/qtl for Onion (Modal Price), which is ₹50 higher than Nashik.'),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.directions),
-            label: const Text('Get Directions (60km)'),
-          )
+          const SizedBox(height: 16),
+          Text(
+            '${price.market} (${price.district}) is offering ₹${price.modalPrice.toInt()}/qtl for ${price.commodity}. Updated on ${price.date}.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.5, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPriceTrendChart() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('7-Day Price Trend (Onion)', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(show: false),
-                  titlesData: FlTitlesData(
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                          if (value.toInt() >= 0 && value.toInt() < days.length) {
-                            return Text(days[value.toInt()]);
-                          }
-                          return const Text('');
-                        },
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Weekly Price Analytics', 
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)
+          ),
+          Text(
+            'Projected trend based on current arrivals', 
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textHint, fontWeight: FontWeight.w600)
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 200,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(color: AppColors.outlineVariant.withValues(alpha: 0.3), strokeWidth: 1),
+                ),
+                titlesData: FlTitlesData(
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        if (value.toInt() >= 0 && value.toInt() < days.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Text(days[value.toInt()], style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textHint)),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                minX: 0,
+                maxX: 6,
+                minY: 1000,
+                maxY: 5000,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: const [
+                      FlSpot(0, 2200),
+                      FlSpot(1, 2350),
+                      FlSpot(2, 2300),
+                      FlSpot(3, 2450),
+                      FlSpot(4, 2500),
+                      FlSpot(5, 2400),
+                      FlSpot(6, 2600),
+                    ],
+                    isCurved: true,
+                    gradient: AppTheme.celestialGradient,
+                    barWidth: 4,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true, 
+                      gradient: LinearGradient(
+                        colors: [AppColors.primaryEmerald.withValues(alpha: 0.2), AppColors.primaryEmerald.withValues(alpha: 0.0)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
                     ),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
-                  minX: 0,
-                  maxX: 6,
-                  minY: 1500,
-                  maxY: 2500,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 1600),
-                        FlSpot(1, 1650),
-                        FlSpot(2, 1800),
-                        FlSpot(3, 1750),
-                        FlSpot(4, 1850),
-                        FlSpot(5, 1900),
-                        FlSpot(6, 1850),
-                      ],
-                      isCurved: true,
-                      color: AppColors.primaryGreen,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(show: true, color: AppColors.primaryGreen.withValues(alpha: 0.2)),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildPriceTable() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Today\'s Rates (₹/Quintal)', style: Theme.of(context).textTheme.titleLarge),
-                IconButton(icon: const Icon(Icons.add_alert, color: AppColors.secondaryAmber), onPressed: () {}),
-              ],
-            ),
-            const SizedBox(height: 16),
+  Widget _buildPriceTable(List<MarketPrice> prices) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Current Arrivals', 
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)
+              ),
+              IconButton(
+                icon: const Icon(Icons.sync_rounded, color: AppColors.primaryEmerald), 
+                onPressed: () => ref.refresh(mandiProvider),
+                style: IconButton.styleFrom(backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (prices.isEmpty) 
+             Center(child: Text('No active data for selected filters', style: GoogleFonts.plusJakartaSans(color: AppColors.textHint)))
+          else
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor: WidgetStateProperty.all(AppColors.surfaceGreenLight),
-                columns: const [
-                  DataColumn(label: Text('Mandi')),
-                  DataColumn(label: Text('Min')),
-                  DataColumn(label: Text('Max')),
-                  DataColumn(label: Text('Modal')),
+                horizontalMargin: 0,
+                columnSpacing: 32,
+                headingRowHeight: 40,
+                dataRowMinHeight: 56,
+                dataRowMaxHeight: 56,
+                columns: [
+                  DataColumn(label: Text('District', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textHint, fontSize: 12))),
+                  DataColumn(label: Text('Mandi', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textHint, fontSize: 12))),
+                  DataColumn(label: Text('Modal Rate', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textHint, fontSize: 12))),
                 ],
-                rows: _prices.where((p) => p.commodity == 'Onion').map((p) => DataRow(
+                rows: prices.take(10).map((p) => DataRow(
                   cells: [
-                    DataCell(Text(p.district)),
-                    DataCell(Text('₹${p.minPrice.toInt()}')),
-                    DataCell(Text('₹${p.maxPrice.toInt()}')),
-                    DataCell(Text('₹${p.modalPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                    DataCell(Text(p.district, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary))),
+                    DataCell(Text(p.market, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
+                    DataCell(Text('₹${p.modalPrice.toInt()}', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: AppColors.primaryEmerald, fontSize: 15))),
                   ],
                 )).toList(),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

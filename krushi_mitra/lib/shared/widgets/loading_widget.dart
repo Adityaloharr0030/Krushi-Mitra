@@ -3,8 +3,9 @@ import '../../core/theme/app_colors.dart';
 
 class LoadingWidget extends StatelessWidget {
   final String? message;
+  final Color? color;
 
-  const LoadingWidget({super.key, this.message});
+  const LoadingWidget({super.key, this.message, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -12,16 +13,14 @@ class LoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(color ?? AppColors.primaryEmerald),
           ),
-          if (message != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              message!,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-          ],
+          const SizedBox(height: 16),
+          Text(
+            message ?? 'Syncing farm data...',
+            style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
