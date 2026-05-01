@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../home/screens/main_screen.dart';
+import '../../onboarding/screens/profile_setup_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -129,13 +130,23 @@ class AuthGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    final profileState = ref.watch(currentUserProvider);
 
     return authState.when(
       data: (user) {
-        if (user != null) {
-          return const MainScreen();
-        }
-        return const LoginScreen();
+        if (user == null) return const LoginScreen();
+        
+        // If logged in, check if profile is loaded
+        return profileState.when(
+          data: (profile) {
+            if (profile == null) {
+              return const ProfileSetupScreen();
+            }
+            return const MainScreen();
+          },
+          loading: () => const SplashScreen(),
+          error: (e, st) => const ProfileSetupScreen(), // Fallback to setup on error
+        );
       },
       loading: () => const SplashScreen(),
       error: (e, st) => Scaffold(

@@ -22,6 +22,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authServiceProvider).currentUser;
+      if (user != null && user.displayName != null && _nameController.text.isEmpty) {
+        setState(() {
+          _nameController.text = user.displayName!;
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _districtController.dispose();
