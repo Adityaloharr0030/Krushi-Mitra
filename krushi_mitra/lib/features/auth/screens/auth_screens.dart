@@ -123,3 +123,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         ),    );
   }
 }
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user != null) {
+          return const MainScreen();
+        }
+        return const LoginScreen();
+      },
+      loading: () => const SplashScreen(),
+      error: (e, st) => Scaffold(
+        body: Center(child: Text('Auth Error: $e')),
+      ),
+    );
+  }
+}
