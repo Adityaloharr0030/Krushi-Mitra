@@ -336,7 +336,10 @@ class MarketplaceScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => launchUrl(Uri.parse('https://wa.me/91${listing.phoneNumber!.replaceAll("+91", "")}')),
+                      onPressed: () {
+                        final phone = listing.phoneNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+                        launchUrl(Uri.parse('https://wa.me/91$phone'));
+                      },
                       icon: const Icon(Icons.chat_rounded),
                       label: Text('WhatsApp', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),

@@ -69,7 +69,7 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
                 const SizedBox(height: 24),
                 _buildSmartMarketAnalysis(filteredPrices, smartContext, currentCommodity),
                 const SizedBox(height: 24),
-                _buildPriceTrendChart(),
+                _buildPriceTrendChart(filteredPrices),
                 const SizedBox(height: 24),
                 _buildPriceTable(filteredPrices),
               ],
@@ -239,7 +239,25 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
     );
   }
 
-  Widget _buildPriceTrendChart() {
+  Widget _buildPriceTrendChart(List<MarketPrice> prices) {
+    if (prices.isEmpty) return const SizedBox.shrink();
+
+    // Build chart spots from real data (up to 7 entries)
+    final chartPrices = prices.take(7).toList();
+    final spots = <FlSpot>[];
+    double minY = double.infinity;
+    double maxY = 0;
+    for (int i = 0; i < chartPrices.length; i++) {
+      final price = chartPrices[i].modalPrice;
+      spots.add(FlSpot(i.toDouble(), price));
+      if (price < minY) minY = price;
+      if (price > maxY) maxY = price;
+    }
+    // Add padding to Y range
+    final yPadding = (maxY - minY) * 0.2;
+    minY = (minY - yPadding).clamp(0, double.infinity);
+    maxY = maxY + yPadding;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -258,11 +276,11 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Weekly Price Analytics', 
+            'Price Comparison by Mandi', 
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)
           ),
           Text(
-            'Projected trend based on current arrivals', 
+            'Modal rates across ${chartPrices.length} mandis', 
             style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textHint, fontWeight: FontWeight.w600)
           ),
           const SizedBox(height: 32),
@@ -282,11 +300,12 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value.toInt() >= 0 && value.toInt() < days.length) {
+                        final idx = value.toInt();
+                        if (idx >= 0 && idx < chartPrices.length) {
+                          final name = chartPrices[idx].market;
                           return Padding(
                             padding: const EdgeInsets.only(top: 10),
-                            child: Text(days[value.toInt()], style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textHint)),
+                            child: Text(name.length > 6 ? '${name.substring(0, 5)}…' : name, style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.textHint)),
                           );
                         }
                         return const Text('');
@@ -296,25 +315,17 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
                 ),
                 borderData: FlBorderData(show: false),
                 minX: 0,
-                maxX: 6,
-                minY: 1000,
-                maxY: 5000,
+                maxX: (chartPrices.length - 1).toDouble(),
+                minY: minY,
+                maxY: maxY,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 2200),
-                      FlSpot(1, 2350),
-                      FlSpot(2, 2300),
-                      FlSpot(3, 2450),
-                      FlSpot(4, 2500),
-                      FlSpot(5, 2400),
-                      FlSpot(6, 2600),
-                    ],
+                    spots: spots,
                     isCurved: true,
                     gradient: AppTheme.celestialGradient,
                     barWidth: 4,
                     isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
+                    dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true, 
                       gradient: LinearGradient(

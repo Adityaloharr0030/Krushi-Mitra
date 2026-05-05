@@ -116,7 +116,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         location: profile != null ? '${profile.district}, ${profile.state}' : 'India',
         description: _descController.text.trim(),
         imageUrl: '',
-        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+        phoneNumber: _phoneController.text.trim().replaceAll(RegExp(r'[^0-9]'), ''),
         dateListed: DateTime.now(),
       );
 
@@ -173,7 +173,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               const SizedBox(height: 12),
               _buildQuantityPrice(),
               const SizedBox(height: 24),
-              _buildSectionLabel('CONTACT (OPTIONAL)'),
+              _buildSectionLabel('YOUR CONTACT NUMBER'),
               const SizedBox(height: 12),
               _buildPhoneField(),
               const SizedBox(height: 24),
@@ -308,11 +308,17 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         controller: _phoneController,
         keyboardType: TextInputType.phone,
         decoration: const InputDecoration(
-          labelText: 'Phone Number (for buyers to contact)',
+          labelText: 'Phone Number (buyers will contact you)',
           hintText: '10 digit mobile number',
           prefixIcon: Icon(Icons.phone_rounded),
           prefixText: '+91 ',
         ),
+        validator: (val) {
+          if (val == null || val.trim().isEmpty) return 'Phone number is required for buyers to contact you';
+          final cleaned = val.trim().replaceAll(RegExp(r'[^0-9]'), '');
+          if (cleaned.length < 10) return 'Enter a valid 10-digit number';
+          return null;
+        },
       ),
     );
   }

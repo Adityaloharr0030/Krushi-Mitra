@@ -31,7 +31,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     ref.invalidate(weatherProvider);
     ref.invalidate(mandiProvider);
     ref.invalidate(smartContextProvider);
-    await Future.delayed(const Duration(milliseconds: 500));
+    ref.invalidate(ubiquitousContextProvider);
+    ref.invalidate(farmerDiaryProvider);
+    await Future.delayed(const Duration(milliseconds: 800));
   }
 
   @override
@@ -255,7 +257,13 @@ class _QuickStatsRow extends ConsumerWidget {
     
     return Row(
       children: [
-        const Expanded(child: _StatCard(emoji: '🌱', value: '87%', label: 'Crop Health', isGood: true)),
+        Expanded(
+          child: profileAsync.when(
+            data: (p) => _StatCard(emoji: '🌱', value: '${p?.landSize.toStringAsFixed(1) ?? '—'} ac', label: 'Farm Size', isGood: true),
+            loading: () => const _StatCard(emoji: '🌱', value: '...', label: 'Farm Size'),
+            error: (_, __) => const _StatCard(emoji: '🌱', value: '—', label: 'Farm Size'),
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: weatherAsync.when(
