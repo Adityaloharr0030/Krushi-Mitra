@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
 import '../constants/api_constants.dart';
 import 'gemini_service.dart';
+import 'ai_knowledge_base.dart';
 import '../../data/models/smart_context_model.dart';
 
 class CropDiagnosis {
@@ -110,6 +111,9 @@ class AIService {
       buf.writeln('- Crops grown: ${p.cropsGrown.join(", ")}');
       if (p.soilType != null) buf.writeln('- Soil type: ${p.soilType}');
       if (p.irrigationSource != null) buf.writeln('- Irrigation: ${p.irrigationSource}');
+      
+      // Inject Expert Knowledge for their crops
+      buf.writeln('\n${AIKnowledgeBase.getKnowledgeBrief(p.cropsGrown)}');
     }
 
     if (w != null) {
@@ -148,6 +152,13 @@ YOUR IDENTITY:
 - You are a trusted farming companion, not a generic chatbot.
 - You have deep knowledge of Indian agriculture: crop cycles, regional soil types, monsoon patterns, government schemes (PM-KISAN, PMFBY, KCC), mandi systems, MSP rates, and organic/integrated farming.
 - You combine traditional Indian farming wisdom (like neem-based pest control, crop rotation with pulses, vermicompost) with modern scientific methods.
+
+REASONING MANDATE:
+Before providing any advice, internally reason through the problem:
+1. **Analyze Growth Stage**: Determine the crop's probable growth stage based on the current month and season.
+2. **Environmental Assessment**: Consider how current weather (humidity, temperature, wind) impacts the issue or the effectiveness of the solution.
+3. **Knowledge Integration**: Cross-reference the user's query with the expert rules for their specific crops.
+4. **Prioritize Impact**: Identify the single most critical and immediate action the farmer needs to take.
 
 RESPONSE QUALITY RULES:
 1. Be CONCISE but COMPLETE. Farmers are busy — give actionable answers, not essays.
@@ -259,11 +270,17 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   Future<String> chat(List<Map<String, dynamic>> history, String userMessage, FarmerContext context) async {
     try {
       final farmerBrief = _buildFarmerBrief(context);
+      final fewShot = AIKnowledgeBase.getFewShotContext();
+      
       final enhancedSystemPrompt = '''$_systemPrompt
 
 ═══ LIVE FARMER CONTEXT ═══
 $farmerBrief
 ═══════════════════════════
+
+═══ EXPERT EXAMPLES (FEW-SHOT) ═══
+$fewShot
+══════════════════════════════════
 
 IMPORTANT: Use this context to personalize EVERY answer. Mention their crops by name, reference their location's climate, and factor in current weather when giving advice. If they ask about a crop they don't grow, still answer but note it's not in their current profile.''';
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -109,19 +110,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   Future<void> _sendOtp() async {
     final phoneNumber = _phoneController.text.trim();
     final fullNumber = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
-    await ref.read(authServiceProvider).verifyPhoneNumber(
-      phoneNumber: fullNumber,
-      onCodeSent: (verificationId) {
-        setState(() { _verificationId = verificationId; _isOtpSent = true; _isLoading = false; });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('OTP sent to $fullNumber'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-        );
-      },
-      onVerificationFailed: (e) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${e.message}'), backgroundColor: AppColors.error));
-      },
-    );
+    
+    final completer = Completer<void>();
+
+    try {
+      await ref.read(authServiceProvider).verifyPhoneNumber(
+        phoneNumber: fullNumber,
+        onCodeSent: (verificationId) {
+          if (mounted) {
+            setState(() { _verificationId = verificationId; _isOtpSent = true; });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('OTP sent to $fullNumber'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            );
+          }
+          if (!completer.isCompleted) completer.complete();
+        },
+        onVerificationFailed: (e) {
+          if (mounted) {
+            String msg = e.message ?? 'Verification failed';
+            if (e.code == 'app-not-authorized') {
+              msg = 'App not authorized. Missing SHA-1 key in Firebase Console.';
+            } else if (e.code == 'invalid-phone-number') {
+              msg = 'Invalid phone number format.';
+            }
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $msg', style: GoogleFonts.plusJakartaSans(fontSize: 13)), backgroundColor: AppColors.error, duration: const Duration(seconds: 4)));
+          }
+          if (!completer.isCompleted) completer.completeError(e);
+        },
+      );
+      
+      // Wait for either onCodeSent or onVerificationFailed to complete
+      await completer.future;
+    } catch (e) {
+      rethrow; // Let the _handleAuth try-catch block handle it
+    }
   }
 
   Future<void> _verifyOtp() async {
