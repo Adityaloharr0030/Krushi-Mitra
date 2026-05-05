@@ -96,7 +96,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ? NetworkImage(profile!.photoUrl!) 
                 : null,
               child: profile?.photoUrl == null 
-                ? const Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary)
+                ? Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary)
                 : null,
             ),
           ),

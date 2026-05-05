@@ -144,7 +144,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           backgroundColor: AppColors.surfaceObsidian,
                           backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
                           child: _imageFile == null 
-                            ? const Icon(Icons.person_rounded, size: 60, color: AppColors.textSecondary)
+                            ? Icon(Icons.person_rounded, size: 60, color: AppColors.textSecondary)
                             : null,
                         ),
                       ),
