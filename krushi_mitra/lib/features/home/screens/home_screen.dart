@@ -25,7 +25,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
   Future<void> _handleRefresh() async {
     ref.invalidate(currentUserProvider);
     ref.invalidate(weatherProvider);
@@ -137,7 +138,7 @@ class _HomeContent extends ConsumerWidget {
   Widget _buildTopNavigation(WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
     final weatherAsync = ref.watch(weatherProvider);
-    
+
     return userAsync.when(
       loading: () => const SizedBox(height: 150),
       error: (_, __) => const SizedBox(height: 150),
@@ -145,14 +146,17 @@ class _HomeContent extends ConsumerWidget {
         final userName = profile?.name.split(' ').first ?? 'Farmer';
         final location = weatherAsync.maybeWhen(
           data: (w) => w.cityName,
-          orElse: () => profile != null ? '${profile.district}, ${profile.state}' : 'Location...',
+          orElse: () => profile != null
+              ? '${profile.district}, ${profile.state}'
+              : 'Location...',
         );
 
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
           decoration: BoxDecoration(
             gradient: AppTheme.celestialGradient,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(40)),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primaryEmerald.withValues(alpha: 0.2),
@@ -196,10 +200,13 @@ class _HomeContent extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 1.5),
                     ),
                     child: Center(
-                      child: Text(profile?.photoUrl != null ? '' : '👨‍🌾', style: const TextStyle(fontSize: 28)),
+                      child: Text(profile?.photoUrl != null ? '' : '👨‍🌾',
+                          style: const TextStyle(fontSize: 28)),
                     ),
                   ),
                 ],
@@ -210,11 +217,13 @@ class _HomeContent extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                    const Icon(Icons.location_on_rounded,
+                        color: Colors.white, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -254,27 +263,35 @@ class _QuickStatsRow extends ConsumerWidget {
     final weatherAsync = ref.watch(weatherProvider);
     final mandiAsync = ref.watch(mandiProvider);
     final profileAsync = ref.watch(currentUserProvider);
-    
+
     return Row(
       children: [
         Expanded(
           child: profileAsync.when(
-            data: (p) => _StatCard(emoji: '🌱', value: '${p?.landSize.toStringAsFixed(1) ?? '—'} ac', label: 'Farm Size', isGood: true),
-            loading: () => const _StatCard(emoji: '🌱', value: '...', label: 'Farm Size'),
-            error: (_, __) => const _StatCard(emoji: '🌱', value: '—', label: 'Farm Size'),
+            data: (p) => _StatCard(
+                emoji: '🌱',
+                value: '${p?.landSize.toStringAsFixed(1) ?? '—'} ac',
+                label: 'Farm Size',
+                isGood: true),
+            loading: () =>
+                const _StatCard(emoji: '🌱', value: '...', label: 'Farm Size'),
+            error: (_, __) =>
+                const _StatCard(emoji: '🌱', value: '—', label: 'Farm Size'),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: weatherAsync.when(
             data: (w) => _StatCard(
-              emoji: '🌧️', 
-              value: w.rainChance > 20 ? '${w.rainChance.round()}%' : 'No Rain', 
-              label: 'Next Rain', 
-              isGood: w.rainChance < 30
-            ),
-            loading: () => const _StatCard(emoji: '🌧️', value: '...', label: 'Next Rain'),
-            error: (_, __) => const _StatCard(emoji: '🌧️', value: '---', label: 'Next Rain'),
+                emoji: '🌧️',
+                value:
+                    w.rainChance > 20 ? '${w.rainChance.round()}%' : 'No Rain',
+                label: 'Next Rain',
+                isGood: w.rainChance < 30),
+            loading: () =>
+                const _StatCard(emoji: '🌧️', value: '...', label: 'Next Rain'),
+            error: (_, __) =>
+                const _StatCard(emoji: '🌧️', value: '---', label: 'Next Rain'),
           ),
         ),
         const SizedBox(width: 10),
@@ -282,26 +299,30 @@ class _QuickStatsRow extends ConsumerWidget {
           child: mandiAsync.when(
             data: (prices) {
               if (prices.isEmpty) {
-                return const _StatCard(emoji: '📈', value: 'N/A', label: 'Market');
+                return const _StatCard(
+                    emoji: '📈', value: 'N/A', label: 'Market');
               }
               final profile = profileAsync.value;
-              final primaryCrop = (profile != null && profile.cropsGrown.isNotEmpty) 
-                  ? profile.cropsGrown.first 
-                  : 'Wheat';
-                  
+              final primaryCrop =
+                  (profile != null && profile.cropsGrown.isNotEmpty)
+                      ? profile.cropsGrown.first
+                      : 'Wheat';
+
               final targetPrice = prices.firstWhere(
-                (p) => p.commodity.toLowerCase() == primaryCrop.toLowerCase(), 
+                (p) => p.commodity.toLowerCase() == primaryCrop.toLowerCase(),
                 orElse: () => prices.first,
               );
               return _StatCard(
-                emoji: '📈', 
-                value: '₹${targetPrice.modalPrice.round()}', 
-                label: '${targetPrice.commodity}/qtl', 
+                emoji: '📈',
+                value: '₹${targetPrice.modalPrice.round()}',
+                label: '${targetPrice.commodity}/qtl',
                 isGood: true,
               );
             },
-            loading: () => const _StatCard(emoji: '📈', value: '...', label: 'Market'),
-            error: (_, __) => const _StatCard(emoji: '📈', value: '---', label: 'Market'),
+            loading: () =>
+                const _StatCard(emoji: '📈', value: '...', label: 'Market'),
+            error: (_, __) =>
+                const _StatCard(emoji: '📈', value: '---', label: 'Market'),
           ),
         ),
       ],
@@ -339,7 +360,10 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (isGood == true ? AppColors.success : AppColors.primaryEmerald).withValues(alpha: 0.1),
+              color: (isGood == true
+                      ? AppColors.success
+                      : AppColors.primaryEmerald)
+                  .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Text(emoji, style: const TextStyle(fontSize: 18)),
@@ -348,13 +372,18 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.outfit(
-              fontSize: 18, fontWeight: FontWeight.w800,
-              color: isGood == true ? AppColors.success : AppColors.primaryEmerald,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color:
+                  isGood == true ? AppColors.success : AppColors.primaryEmerald,
             ),
           ),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -366,14 +395,54 @@ class _FeatureGrid extends StatelessWidget {
   const _FeatureGrid();
 
   static const _features = [
-    {'emoji': '🤖', 'title': 'AI Doctor', 'subtitle': 'Diagnose crop', 'gradient': 'green'},
-    {'emoji': '🏪', 'title': 'Marketplace', 'subtitle': 'Sell Produce', 'gradient': 'purple'},
-    {'emoji': '🧪', 'title': 'Soil Advisor', 'subtitle': 'Fertilizer tip', 'gradient': 'teal'},
-    {'emoji': '🌤️', 'title': 'Weather', 'subtitle': 'Live forecast', 'gradient': 'blue'},
-    {'emoji': '💰', 'title': 'Market', 'subtitle': 'Mandi rates', 'gradient': 'amber'},
-    {'emoji': '🏛️', 'title': 'Govt Schemes', 'subtitle': 'Subsidies', 'gradient': 'red'},
-    {'emoji': '🗓️', 'title': 'Calendar', 'subtitle': 'Planning', 'gradient': 'teal'},
-    {'emoji': '📔', 'title': 'Farm Diary', 'subtitle': 'Record spends', 'gradient': 'green'},
+    {
+      'emoji': '🤖',
+      'title': 'AI Doctor',
+      'subtitle': 'Diagnose crop',
+      'gradient': 'green'
+    },
+    {
+      'emoji': '🏪',
+      'title': 'Marketplace',
+      'subtitle': 'Sell Produce',
+      'gradient': 'purple'
+    },
+    {
+      'emoji': '🧪',
+      'title': 'Soil Advisor',
+      'subtitle': 'Fertilizer tip',
+      'gradient': 'teal'
+    },
+    {
+      'emoji': '🌤️',
+      'title': 'Weather',
+      'subtitle': 'Live forecast',
+      'gradient': 'blue'
+    },
+    {
+      'emoji': '💰',
+      'title': 'Market',
+      'subtitle': 'Mandi rates',
+      'gradient': 'amber'
+    },
+    {
+      'emoji': '🏛️',
+      'title': 'Govt Schemes',
+      'subtitle': 'Subsidies',
+      'gradient': 'red'
+    },
+    {
+      'emoji': '🗓️',
+      'title': 'Calendar',
+      'subtitle': 'Planning',
+      'gradient': 'teal'
+    },
+    {
+      'emoji': '📔',
+      'title': 'Farm Diary',
+      'subtitle': 'Record spends',
+      'gradient': 'green'
+    },
   ];
 
   @override
@@ -403,27 +472,54 @@ class _FeatureGrid extends StatelessWidget {
 
   LinearGradient _getGradient(String type) {
     switch (type) {
-      case 'green': return AppTheme.celestialGradient;
-      case 'blue': return const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)]);
-      case 'amber': return const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFF59E0B)]);
-      case 'purple': return AppTheme.luxuryGradient;
-      case 'teal': return const LinearGradient(colors: [Color(0xFF14B8A6), Color(0xFF5EEAD4)]);
-      case 'red': return const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFF87171)]);
-      default: return AppTheme.celestialGradient;
+      case 'green':
+        return AppTheme.celestialGradient;
+      case 'blue':
+        return const LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)]);
+      case 'amber':
+        return const LinearGradient(
+            colors: [Color(0xFFD97706), Color(0xFFF59E0B)]);
+      case 'purple':
+        return AppTheme.luxuryGradient;
+      case 'teal':
+        return const LinearGradient(
+            colors: [Color(0xFF14B8A6), Color(0xFF5EEAD4)]);
+      case 'red':
+        return const LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFF87171)]);
+      default:
+        return AppTheme.celestialGradient;
     }
   }
 
   void _handleTap(BuildContext context, int i) {
     Widget? screen;
     switch (i) {
-      case 0: screen = const AIDoctorScreen(); break;
-      case 1: screen = const MarketplaceScreen(); break;
-      case 2: screen = const SoilInputScreen(); break;
-      case 3: screen = const WeatherScreen(); break;
-      case 4: screen = MandiPricesScreen(); break;
-      case 5: screen = const SchemesListScreen(); break;
-      case 6: screen = const CropCalendarScreen(); break;
-      case 7: screen = FarmDiaryScreen(); break;
+      case 0:
+        screen = const AIDoctorScreen();
+        break;
+      case 1:
+        screen = const MarketplaceScreen();
+        break;
+      case 2:
+        screen = const SoilInputScreen();
+        break;
+      case 3:
+        screen = const WeatherScreen();
+        break;
+      case 4:
+        screen = MandiPricesScreen();
+        break;
+      case 5:
+        screen = const SchemesListScreen();
+        break;
+      case 6:
+        screen = const CropCalendarScreen();
+        break;
+      case 7:
+        screen = FarmDiaryScreen();
+        break;
     }
     if (screen != null) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
@@ -478,11 +574,17 @@ class _FeatureCard extends StatelessWidget {
               const Spacer(),
               Text(
                 title,
-                style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white),
               ),
               Text(
                 subtitle,
-                style: GoogleFonts.plusJakartaSans(fontSize: 10, color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -492,72 +594,111 @@ class _FeatureCard extends StatelessWidget {
   }
 }
 
-class _SmartInsightCard extends ConsumerWidget {
+class _SmartInsightCard extends ConsumerStatefulWidget {
   const _SmartInsightCard();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-        final contextData = ref.watch(ubiquitousContextProvider);
+  ConsumerState<_SmartInsightCard> createState() => _SmartInsightCardState();
+}
 
-        return FutureBuilder<String>(
-          future: AIService().getPersonalizedAdvice(contextData),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingCard();
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox.shrink();
-            }
+class _SmartInsightCardState extends ConsumerState<_SmartInsightCard> {
+  Future<String>? _adviceFuture;
 
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceObsidian,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryEmerald.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Text('🧠', style: TextStyle(fontSize: 32)),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AI SMART ADVICE',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryEmerald,
-                            letterSpacing: 2.0,
+  @override
+  void initState() {
+    super.initState();
+    // Delay AI call slightly to let other providers load first
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          final contextData = ref.read(ubiquitousContextProvider);
+          _adviceFuture = AIService().getPersonalizedAdvice(contextData);
+        });
+      }
+    });
+  }
+
+  void refreshAdvice() {
+    setState(() {
+      final contextData = ref.read(ubiquitousContextProvider);
+      _adviceFuture = AIService().getPersonalizedAdvice(contextData);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_adviceFuture == null) return _buildLoadingCard();
+
+    return FutureBuilder<String>(
+      future: _adviceFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingCard();
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return GestureDetector(
+          onTap: refreshAdvice,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceObsidian,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const Text('🧠', style: TextStyle(fontSize: 32)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'AI SMART ADVICE',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryEmerald,
+                              letterSpacing: 2.0,
+                            ),
                           ),
+                          const Spacer(),
+                          Icon(Icons.refresh_rounded,
+                              size: 14, color: AppColors.textSecondary),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        snapshot.data!,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          snapshot.data!,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              ],
+            ),
+          ),
         );
+      },
+    );
   }
 
   Widget _buildLoadingCard() {
@@ -566,10 +707,24 @@ class _SmartInsightCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceObsidian,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryEmerald),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.primaryEmerald)),
+            const SizedBox(width: 12),
+            Text('Getting smart insights...',
+                style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.textSecondary, fontSize: 13)),
+          ],
+        ),
       ),
     );
   }

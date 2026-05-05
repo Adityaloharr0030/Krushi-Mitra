@@ -64,18 +64,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                 children: [
                   ScaleTransition(
                     scale: _scaleAnim,
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                        boxShadow: [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 40, spreadRadius: 10)],
-                      ),
-                      child: Hero(
-                        tag: 'app_logo',
-                        child: Image.asset('assets/icons/app_icon.png', height: 80, width: 80,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, size: 80, color: Colors.white)),
+                    child: Hero(
+                      tag: 'app_logo',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryEmerald.withValues(alpha: 0.4),
+                              blurRadius: 60,
+                              spreadRadius: 10,
+                            ),
+                            BoxShadow(
+                              color: AppColors.neonCyan.withValues(alpha: 0.2),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Image.asset(
+                            'assets/icons/app_icon.png', 
+                            height: 120, 
+                            width: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 120,
+                              width: 120,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceVariant.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+                              ),
+                              child: const Icon(Icons.agriculture_rounded, size: 60, color: AppColors.primaryEmerald),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

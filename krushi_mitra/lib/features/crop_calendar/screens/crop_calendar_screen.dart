@@ -147,53 +147,82 @@ class _CropCalendarScreenState extends ConsumerState<CropCalendarScreen> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.surfaceWhite,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
+            border: Border(bottom: BorderSide(color: AppColors.outline.withValues(alpha: 0.2))),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 30, offset: const Offset(0, 10))],
           ),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-                    child: Text(cropData['emoji'] as String, style: const TextStyle(fontSize: 24)),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryEmerald.withValues(alpha: 0.15),
+                      AppColors.neonCyan.withValues(alpha: 0.05)
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_selectedCrop!, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
-                        Text('${cropData['season']} Season • ${cropData['duration']}',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                      ],
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 64, height: 64,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.2), blurRadius: 15)],
+                      ),
+                      child: Center(child: Text(cropData['emoji'] as String, style: const TextStyle(fontSize: 32))),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_selectedCrop!, style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(8)),
+                            child: Text('${cropData['season']} Season • ${cropData['duration']}', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (farmerCrops.length > 1) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
                   child: Row(
                     children: farmerCrops.map((crop) {
                       final isSelected = crop == _selectedCrop;
                       final data = _cropCalendarData[crop];
                       return Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.only(right: 12),
                         child: GestureDetector(
                           onTap: () => setState(() => _selectedCrop = crop),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutCubic,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             decoration: BoxDecoration(
                               color: isSelected ? AppColors.primaryEmerald : AppColors.surfaceVariant.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: isSelected ? AppColors.neonCyan : Colors.transparent),
+                              boxShadow: isSelected ? [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 4))] : [],
                             ),
                             child: Text(
                               '${data?['emoji'] ?? '🌿'} $crop',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: isSelected ? Colors.white : AppColors.textPrimary),
+                              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: isSelected ? Colors.white : AppColors.textSecondary),
                             ),
                           ),
                         ),
@@ -264,69 +293,96 @@ class TimelineTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            width: 90,
+            width: 40,
             child: Column(
               children: [
-                if (!isFirst) Container(height: 20, width: 3, decoration: BoxDecoration(
-                  color: isActive ? AppColors.primaryEmerald : AppColors.outlineVariant.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
+                if (!isFirst) Container(height: 20, width: 2, decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                    colors: [AppColors.outline.withValues(alpha: 0.1), isActive ? AppColors.primaryEmerald : AppColors.outline.withValues(alpha: 0.3)]
+                  ),
+                  borderRadius: BorderRadius.circular(1),
                 )),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  width: 32, height: 32,
                   decoration: BoxDecoration(
-                    gradient: isActive ? AppTheme.celestialGradient : null,
-                    color: isActive ? null : AppColors.surfaceWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isActive ? Colors.transparent : AppColors.outlineVariant.withValues(alpha: 0.5)),
-                    boxShadow: isActive ? [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))] : null,
+                    color: isActive ? AppColors.primaryEmerald : AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isActive ? AppColors.neonCyan : AppColors.outline.withValues(alpha: 0.5), 
+                      width: isActive ? 4 : 2
+                    ),
+                    boxShadow: isActive ? [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.5), blurRadius: 10)] : [],
                   ),
-                  child: Text(
-                    month,
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 12, color: isActive ? Colors.white : AppColors.textSecondary),
-                  ),
+                  child: isActive ? const Icon(Icons.star_rounded, color: Colors.white, size: 14) : null,
                 ),
-                if (!isLast) Expanded(child: Container(width: 3, decoration: BoxDecoration(
-                  color: isActive ? AppColors.primaryEmerald : AppColors.outlineVariant.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
+                if (!isLast) Expanded(child: Container(width: 2, decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                    colors: [isActive ? AppColors.primaryEmerald : AppColors.outline.withValues(alpha: 0.3), AppColors.outline.withValues(alpha: 0.1)]
+                  ),
+                  borderRadius: BorderRadius.circular(1),
                 ))),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 32.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceWhite,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.3)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isActive ? 0.08 : 0.03), blurRadius: 20, offset: const Offset(0, 8))],
+                  color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.08) : AppColors.surface,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.4) : AppColors.outline.withValues(alpha: 0.2)),
+                  boxShadow: isActive ? [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.05), blurRadius: 24, offset: const Offset(0, 12))] : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(isActive ? Icons.bolt_rounded : Icons.schedule_rounded, color: isActive ? AppColors.primaryEmerald : AppColors.textHint, size: 20),
-                          const SizedBox(width: 8),
-                          Text(phase, style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isActive ? AppColors.primaryEmerald : AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              month,
+                              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w900, color: isActive ? Colors.white : AppColors.textSecondary, letterSpacing: 0.5),
+                            ),
+                          ),
+                          if (isActive) ...[
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(color: AppColors.neonCyan.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                              child: Text('CURRENT', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.neonCyan, letterSpacing: 1.5)),
+                            ),
+                          ],
                         ],
                       ),
+                      const SizedBox(height: 16),
+                      Text(phase, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20, color: isActive ? AppColors.primaryEmerald : AppColors.textPrimary)),
                       const SizedBox(height: 16),
                       ...tasks.map((task) => Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 4), width: 6, height: 6,
-                              decoration: BoxDecoration(color: isActive ? AppColors.primaryEmerald : AppColors.textHint, shape: BoxShape.circle),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.2) : AppColors.surfaceVariant, shape: BoxShape.circle),
+                                child: Icon(Icons.check_rounded, size: 12, color: isActive ? AppColors.primaryEmerald : AppColors.textSecondary),
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(task, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600, height: 1.4))),
+                            Expanded(child: Text(task, style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w600, height: 1.5))),
                           ],
                         ),
                       )),

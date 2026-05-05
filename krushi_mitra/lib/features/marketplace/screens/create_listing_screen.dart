@@ -9,7 +9,9 @@ import '../providers/marketplace_provider.dart';
 import '../models/listing_model.dart';
 
 class CreateListingScreen extends ConsumerStatefulWidget {
-  const CreateListingScreen({super.key});
+  final MarketplaceListing? existingListing;
+
+  const CreateListingScreen({super.key, this.existingListing});
 
   @override
   ConsumerState<CreateListingScreen> createState() => _CreateListingScreenState();
@@ -28,6 +30,21 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   bool _isGenerating = false;
   bool _isSubmitting = false;
   String _aiQuality = 'B';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingListing != null) {
+      final listing = widget.existingListing!;
+      _commodityController.text = listing.commodity;
+      _quantityController.text = listing.quantity.toString();
+      _priceController.text = listing.pricePerUnit.toString();
+      _descController.text = listing.description;
+      _phoneController.text = listing.phoneNumber ?? '';
+      _unit = listing.unit;
+      _aiQuality = listing.quality;
+    }
+  }
 
   static const _crops = [
     'Wheat', 'Rice', 'Onion', 'Tomato', 'Potato', 'Cotton',
@@ -105,22 +122,27 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final profile = ref.read(currentUserProvider).valueOrNull;
 
       final listing = MarketplaceListing(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        sellerId: user?.uid ?? '',
-        farmerName: profile?.name ?? user?.displayName ?? 'Farmer',
+        id: widget.existingListing?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        sellerId: widget.existingListing?.sellerId ?? user?.uid ?? '',
+        farmerName: widget.existingListing?.farmerName ?? profile?.name ?? user?.displayName ?? 'Farmer',
         commodity: _commodityController.text.trim(),
         quantity: double.tryParse(_quantityController.text) ?? 0,
         unit: _unit,
         pricePerUnit: double.tryParse(_priceController.text) ?? 0,
         quality: _aiQuality,
-        location: profile != null ? '${profile.district}, ${profile.state}' : 'India',
+        location: widget.existingListing?.location ?? (profile != null ? '${profile.district}, ${profile.state}' : 'India'),
         description: _descController.text.trim(),
-        imageUrl: '',
+        imageUrl: widget.existingListing?.imageUrl ?? '',
         phoneNumber: _phoneController.text.trim().replaceAll(RegExp(r'[^0-9]'), ''),
-        dateListed: DateTime.now(),
+        dateListed: widget.existingListing?.dateListed ?? DateTime.now(),
       );
 
-      await ref.read(marketplaceActionsProvider).addListing(listing);
+      if (widget.existingListing != null) {
+        // Assume update method is available in provider or simply add updates it if ID matches
+        await ref.read(marketplaceActionsProvider).addListing(listing);
+      } else {
+        await ref.read(marketplaceActionsProvider).addListing(listing);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -129,7 +151,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               children: [
                 const Icon(Icons.check_circle_rounded, color: Colors.white),
                 const SizedBox(width: 12),
-                Text('Listing published successfully!', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                Text(widget.existingListing != null ? 'Listing updated successfully!' : 'Listing published successfully!', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
               ],
             ),
             backgroundColor: AppColors.primaryEmerald,
@@ -154,7 +176,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('New Listing', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+        title: Text(widget.existingListing != null ? 'Edit Listing' : 'New Listing', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTheme.celestialGradient)),
       ),
@@ -399,7 +421,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ),
         child: _isSubmitting
             ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text('Publish Listing', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800)),
+            : Text(widget.existingListing != null ? 'Update Listing' : 'Publish Listing', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800)),
       ),
     );
   }

@@ -253,10 +253,26 @@ class MarketplaceScreen extends ConsumerWidget {
                 ),
                 const Spacer(),
                 if (isOwner) ...[
-                  IconButton(
-                    onPressed: () => _confirmDelete(context, ref, listing.id),
-                    icon: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 22),
-                    tooltip: 'Delete',
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(existingListing: listing))),
+                        icon: const Icon(Icons.edit_rounded, size: 16),
+                        label: Text('Edit', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryEmerald,
+                          side: BorderSide(color: AppColors.primaryEmerald.withValues(alpha: 0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => _confirmDelete(context, ref, listing.id),
+                        icon: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 22),
+                        tooltip: 'Delete',
+                      ),
+                    ],
                   ),
                 ] else ...[
                   ElevatedButton.icon(
@@ -267,8 +283,8 @@ class MarketplaceScreen extends ConsumerWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                     ),
-                    icon: const Icon(Icons.call_rounded, size: 18),
-                    label: Text('Contact', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13)),
+                    icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
+                    label: Text('Buy / Contact', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13)),
                   ),
                 ],
               ],
@@ -323,22 +339,39 @@ class MarketplaceScreen extends ConsumerWidget {
             Text('${listing.commodity} • ${listing.location}', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             const SizedBox(height: 24),
             if (listing.phoneNumber != null && listing.phoneNumber!.isNotEmpty) ...[
-              Row(
+              Column(
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => launchUrl(Uri.parse('tel:${listing.phoneNumber}')),
-                      icon: const Icon(Icons.call_rounded),
-                      label: Text('Call', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => launchUrl(Uri.parse('tel:${listing.phoneNumber}')),
+                          icon: const Icon(Icons.call_rounded),
+                          label: Text('Call', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final phone = listing.phoneNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+                            launchUrl(Uri.parse('sms:$phone?body=Hi, I am interested in your ${listing.commodity} listing on Krushi Mitra.'));
+                          },
+                          icon: const Icon(Icons.message_rounded),
+                          label: Text('Message', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.neonCyan, foregroundColor: AppColors.surface, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
                         final phone = listing.phoneNumber!.replaceAll(RegExp(r'[^0-9]'), '');
-                        launchUrl(Uri.parse('https://wa.me/91$phone'));
+                        launchUrl(Uri.parse('https://wa.me/91$phone?text=Hi,%20I%20am%20interested%20in%20your%20${listing.commodity}%20listing%20on%20Krushi%20Mitra.'));
                       },
                       icon: const Icon(Icons.chat_rounded),
                       label: Text('WhatsApp', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
