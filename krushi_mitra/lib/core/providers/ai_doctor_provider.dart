@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/ai_service.dart';
+import 'smart_context_provider.dart';
 
 class AIDoctorState {
   final bool isLoading;
@@ -32,9 +33,11 @@ class AIDoctorState {
 }
 
 class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
-  AIDoctorNotifier() : super(AIDoctorState());
+  final Ref _ref;
+  AIDoctorNotifier(this._ref) : super(AIDoctorState());
 
   Future<void> pickImage(ImageSource source) async {
+    final context = _ref.read(ubiquitousContextProvider);
     final picker = ImagePicker();
     final image = await picker.pickImage(source: source);
     if (image != null) {
@@ -43,7 +46,7 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
       try {
         final diagnosis = await AIService().analyzeCropImage(
           File(image.path), 
-          'en', // TODO: Get language from a global settings provider
+          context,
         );
         
         state = state.copyWith(
@@ -60,5 +63,5 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
 }
 
 final aiDoctorProvider = StateNotifierProvider<AIDoctorNotifier, AIDoctorState>((ref) {
-  return AIDoctorNotifier();
+  return AIDoctorNotifier(ref);
 });

@@ -13,10 +13,11 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
 
@@ -27,13 +28,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _passwordVisible = false;
   String _verificationId = '';
 
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
+  }
+
+  void _switchMode() {
+    _slideController.reset();
+    _slideController.forward();
+    setState(() {
+      _isLogin = !_isLogin;
+      _formKey.currentState?.reset();
+    });
   }
 
   Future<void> _handleAuth() async {
@@ -51,18 +81,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (_isLogin) {
           await auth.signInWithEmail(_emailController.text.trim(), _passwordController.text);
         } else {
-          await auth.signUpWithEmail(_emailController.text.trim(), _passwordController.text);
+          final cred = await auth.signUpWithEmail(_emailController.text.trim(), _passwordController.text);
+          if (cred?.user != null && _nameController.text.trim().isNotEmpty) {
+            await cred!.user!.updateDisplayName(_nameController.text.trim());
+          }
         }
         _navigateToHome();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_friendlyError(e.toString()), style: GoogleFonts.manrope()),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(_friendlyError(e.toString()), style: GoogleFonts.plusJakartaSans(fontSize: 13))),
+          ]),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -71,35 +108,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _sendOtp() async {
     final phoneNumber = _phoneController.text.trim();
-    // Ensure phone number has country code
     final fullNumber = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
-    
     await ref.read(authServiceProvider).verifyPhoneNumber(
       phoneNumber: fullNumber,
       onCodeSent: (verificationId) {
-        setState(() {
-          _verificationId = verificationId;
-          _isOtpSent = true;
-          _isLoading = false;
-        });
+        setState(() { _verificationId = verificationId; _isOtpSent = true; _isLoading = false; });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP sent successfully!')),
+          SnackBar(content: Text('OTP sent to $fullNumber'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
         );
       },
       onVerificationFailed: (e) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification Failed: ${e.message}'), backgroundColor: AppColors.error),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${e.message}'), backgroundColor: AppColors.error));
       },
     );
   }
 
   Future<void> _verifyOtp() async {
-    await ref.read(authServiceProvider).signInWithPhoneNumber(
-      _verificationId,
-      _otpController.text.trim(),
-    );
+    await ref.read(authServiceProvider).signInWithPhoneNumber(_verificationId, _otpController.text.trim());
     _navigateToHome();
   }
 
@@ -107,37 +133,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final credential = await ref.read(authServiceProvider).signInWithGoogle();
-      if (credential != null) {
-        _navigateToHome();
-      }
+      if (credential != null) _navigateToHome();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_friendlyError(e.toString())),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyError(e.toString())), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Enter your email first', style: GoogleFonts.plusJakartaSans()), backgroundColor: AppColors.warning, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+      );
+      return;
+    }
+    try {
+      await ref.read(authServiceProvider).sendPasswordResetEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Reset link sent to $email'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyError(e.toString())), backgroundColor: AppColors.error));
+      }
+    }
+  }
+
   void _navigateToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainScreen()),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
   }
 
   String _friendlyError(String error) {
     if (error.contains('user-not-found')) return 'No account found with this email.';
-    if (error.contains('wrong-password')) return 'Incorrect password. Try again.';
-    if (error.contains('email-already-in-use')) return 'Email already registered.';
-    if (error.contains('invalid-phone-number')) return 'The provided phone number is not valid.';
+    if (error.contains('wrong-password')) return 'Incorrect password. Please try again.';
+    if (error.contains('email-already-in-use')) return 'This email is already registered. Try logging in.';
+    if (error.contains('invalid-phone-number')) return 'Please enter a valid phone number.';
     if (error.contains('invalid-verification-code')) return 'Invalid OTP. Please check and try again.';
+    if (error.contains('weak-password')) return 'Password is too weak. Use at least 6 characters.';
+    if (error.contains('invalid-email')) return 'Please enter a valid email address.';
+    if (error.contains('too-many-requests')) return 'Too many attempts. Please wait and try again.';
+    if (error.contains('network-request-failed')) return 'Network error. Check your internet connection.';
     return 'Something went wrong. Please try again.';
+  }
+
+  int get _passwordStrength {
+    final p = _passwordController.text;
+    if (p.isEmpty) return 0;
+    int score = 0;
+    if (p.length >= 6) score++;
+    if (p.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(p)) score++;
+    if (RegExp(r'[0-9]').hasMatch(p)) score++;
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(p)) score++;
+    return score;
+  }
+
+  Color get _strengthColor {
+    final s = _passwordStrength;
+    if (s <= 1) return AppColors.error;
+    if (s <= 2) return AppColors.warning;
+    if (s <= 3) return AppColors.accentAmber;
+    return AppColors.success;
+  }
+
+  String get _strengthLabel {
+    final s = _passwordStrength;
+    if (s == 0) return '';
+    if (s <= 1) return 'Weak';
+    if (s <= 2) return 'Fair';
+    if (s <= 3) return 'Good';
+    return 'Strong';
   }
 
   @override
@@ -146,137 +217,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Positioned(
-            top: -100, left: -100,
-            child: Container(
-              width: 350, height: 350,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [AppColors.primaryEmerald.withValues(alpha: 0.15), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(28.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.celestialGradient,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryEmerald.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
+          // Background decorations
+          Positioned(top: -120, left: -80, child: _glowCircle(350, AppColors.primaryEmerald.withValues(alpha: 0.08))),
+          Positioned(bottom: -100, right: -100, child: _glowCircle(300, AppColors.neonCyan.withValues(alpha: 0.06))),
+          // Main content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo
+                          _buildLogo(),
+                          const SizedBox(height: 32),
+                          // Title
+                          _buildTitle(),
+                          const SizedBox(height: 8),
+                          Text(
+                            _isPhoneLogin
+                                ? (_isOtpSent ? 'Enter the 6-digit code sent to your phone' : 'We\'ll send you a verification code')
+                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey'),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                            textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 36),
+                          // Form fields
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: _buildFormFields(),
+                          ),
+                          const SizedBox(height: 24),
+                          // Primary button
+                          _buildPrimaryButton(),
+                          // Forgot password
+                          if (!_isPhoneLogin && _isLogin) ...[
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: _forgotPassword,
+                              child: Text('Forgot Password?',
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryEmerald)),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          // Toggle login/signup
+                          if (!_isPhoneLogin)
+                            TextButton(
+                              onPressed: _switchMode,
+                              child: RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary),
+                                  children: [
+                                    TextSpan(text: _isLogin ? 'New here? ' : 'Already have an account? '),
+                                    TextSpan(
+                                      text: _isLogin ? 'Create Account' : 'Login',
+                                      style: TextStyle(color: AppColors.primaryEmerald, fontWeight: FontWeight.w800),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          // Divider
+                          _buildDivider(),
+                          const SizedBox(height: 20),
+                          // Social buttons
+                          _buildGoogleButton(),
+                          const SizedBox(height: 12),
+                          _buildPhoneToggleButton(),
                         ],
                       ),
-                      child: const Center(child: Text('🌾', style: TextStyle(fontSize: 40))),
                     ),
-                    const SizedBox(height: 32),
-                    Text(
-                      _isLogin ? 'WELCOME BACK' : 'JOIN US',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: AppColors.primaryEmerald,
-                        letterSpacing: 2.5,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isPhoneLogin 
-                        ? (_isOtpSent ? 'Verify OTP' : 'Phone Login')
-                        : (_isLogin ? 'Login' : 'Create Account'),
-                      style: GoogleFonts.outfit(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    if (_isPhoneLogin) ...[
-                      if (!_isOtpSent) _buildPhoneField() else _buildOtpField(),
-                    ] else ...[
-                      _buildEmailField(),
-                      const SizedBox(height: 16),
-                      _buildPasswordField(),
-                    ],
-                    const SizedBox(height: 24),
-                    GestureDetector(
-                      onTap: _isLoading ? null : _handleAuth,
-                      child: Container(
-                        height: 56,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: _isLoading ? null : AppTheme.celestialGradient,
-                          color: _isLoading ? AppColors.textSecondary : null,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Center(
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                              : Text(
-                                  _isPhoneLogin 
-                                    ? (_isOtpSent ? 'Verify & Login' : 'Send OTP')
-                                    : (_isLogin ? 'Login' : 'Sign Up'),
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () => setState(() => _isLogin = !_isLogin),
-                      child: Text(_isLogin ? 'New here? Sign Up' : 'Already have an account? Login'),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('OR', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    _buildGoogleButton(),
-                    const SizedBox(height: 16),
-                    
-                    if (!_isPhoneLogin)
-                      _buildAlternativeAuthButton(
-                        Icons.phone_android_rounded, 
-                        'Continue with Phone Number', 
-                        () => setState(() {
-                          _isPhoneLogin = true;
-                          _isOtpSent = false;
-                        })
-                      )
-                    else
-                      _buildAlternativeAuthButton(
-                        Icons.email_outlined, 
-                        'Continue with Email', 
-                        () => setState(() {
-                          _isPhoneLogin = false;
-                          _isOtpSent = false;
-                        })
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -286,50 +304,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildGoogleButton() {
-    return _buildAlternativeAuthButton(
-      Icons.g_mobiledata_rounded, 
-      'Continue with Google', 
-      _handleGoogleLogin,
-      iconColor: Colors.red,
+  Widget _glowCircle(double size, Color color) {
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [color, Colors.transparent])),
     );
   }
 
-  Widget _buildAlternativeAuthButton(IconData icon, String label, VoidCallback onTap, {Color? iconColor}) {
-    return GestureDetector(
-      onTap: _isLoading ? null : onTap,
+  Widget _buildLogo() {
+    return Hero(
+      tag: 'app_logo',
       child: Container(
-        height: 56,
+        width: 88, height: 88,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          gradient: AppTheme.celestialGradient,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.35), blurRadius: 30, offset: const Offset(0, 10))],
         ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: iconColor ?? AppColors.primaryEmerald, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                label, 
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                )
-              ),
-            ],
-          ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Image.asset('assets/icons/app_icon.png', width: 72, height: 72, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, size: 48, color: Colors.white)),
         ),
       ),
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildTitle() {
+    return Column(
+      children: [
+        Text(
+          _isLogin ? 'WELCOME BACK' : 'JOIN KRUSHI MITRA',
+          style: GoogleFonts.plusJakartaSans(color: AppColors.primaryEmerald, letterSpacing: 2.5, fontWeight: FontWeight.w800, fontSize: 11),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _isPhoneLogin ? (_isOtpSent ? 'Verify OTP' : 'Phone Login') : (_isLogin ? 'Sign In' : 'Create Account'),
+          style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormFields() {
+    if (_isPhoneLogin) {
+      return Column(
+        key: const ValueKey('phone'),
+        children: [!_isOtpSent ? _buildPhoneField() : _buildOtpField()],
+      );
+    }
+    return Column(
+      key: ValueKey(_isLogin ? 'login' : 'signup'),
+      children: [
+        if (!_isLogin) ...[
+          _buildField(_nameController, 'Full Name', Icons.person_outline_rounded,
+              validator: (v) => v == null || v.trim().isEmpty ? 'Enter your name' : null),
+          const SizedBox(height: 14),
+        ],
+        _buildField(_emailController, 'Email Address', Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Enter your email';
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email';
+              return null;
+            }),
+        const SizedBox(height: 14),
+        _buildPasswordField(),
+        if (!_isLogin && _passwordController.text.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildPasswordStrengthBar(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildField(TextEditingController controller, String label, IconData icon, {
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
     return TextFormField(
-      controller: _emailController,
-      decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, size: 20)),
+      validator: validator ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
     );
   }
 
@@ -337,15 +394,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return TextFormField(
       controller: _passwordController,
       obscureText: !_passwordVisible,
+      onChanged: (_) { if (!_isLogin) setState(() {}); },
       decoration: InputDecoration(
         labelText: 'Password',
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
         suffixIcon: IconButton(
-          icon: Icon(_passwordVisible ? Icons.visibility_off : Icons.visibility),
+          icon: Icon(_passwordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 20),
           onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
         ),
       ),
-      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      validator: (v) {
+        if (v == null || v.isEmpty) return 'Enter your password';
+        if (v.length < 6) return 'Password must be at least 6 characters';
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordStrengthBar() {
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _passwordStrength / 5,
+              backgroundColor: AppColors.surfaceVariant,
+              color: _strengthColor,
+              minHeight: 4,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(_strengthLabel, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: _strengthColor)),
+      ],
     );
   }
 
@@ -353,13 +435,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return TextFormField(
       controller: _phoneController,
       keyboardType: TextInputType.phone,
-      decoration: const InputDecoration(
-        labelText: 'Phone Number',
-        hintText: 'Enter 10 digit number',
-        prefixIcon: Icon(Icons.phone_android_rounded),
-        prefixText: '+91 ',
-      ),
-      validator: (v) => (v == null || v.isEmpty || v.length < 10) ? 'Enter valid number' : null,
+      decoration: const InputDecoration(labelText: 'Phone Number', hintText: '10 digit number', prefixIcon: Icon(Icons.phone_android_rounded, size: 20), prefixText: '+91 '),
+      validator: (v) => (v == null || v.isEmpty || v.length < 10) ? 'Enter valid 10-digit number' : null,
     );
   }
 
@@ -367,11 +444,106 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return TextFormField(
       controller: _otpController,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
+      maxLength: 6,
+      style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 8),
+      textAlign: TextAlign.center,
+      decoration: InputDecoration(
         labelText: 'Enter OTP',
-        prefixIcon: Icon(Icons.message_rounded),
+        prefixIcon: const Icon(Icons.sms_rounded, size: 20),
+        counterText: '',
+        hintText: '• • • • • •',
+        hintStyle: GoogleFonts.outfit(fontSize: 24, color: AppColors.textSecondary.withValues(alpha: 0.3)),
       ),
       validator: (v) => (v == null || v.isEmpty || v.length < 6) ? 'Enter 6-digit OTP' : null,
+    );
+  }
+
+  Widget _buildPrimaryButton() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _handleAuth,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 56,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: _isLoading ? null : AppTheme.celestialGradient,
+          color: _isLoading ? AppColors.textSecondary : null,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: _isLoading ? [] : [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
+        ),
+        child: Center(
+          child: _isLoading
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+              : Text(
+                  _isPhoneLogin ? (_isOtpSent ? 'Verify & Login' : 'Send OTP') : (_isLogin ? 'Sign In' : 'Create Account'),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: AppColors.outline.withValues(alpha: 0.5))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('OR', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
+        ),
+        Expanded(child: Divider(color: AppColors.outline.withValues(alpha: 0.5))),
+      ],
+    );
+  }
+
+  Widget _buildGoogleButton() {
+    return _socialButton(
+      onTap: _handleGoogleLogin,
+      icon: Container(
+        width: 22, height: 22,
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        child: Center(child: Text('G', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.red.shade600))),
+      ),
+      label: 'Continue with Google',
+    );
+  }
+
+  Widget _buildPhoneToggleButton() {
+    if (!_isPhoneLogin) {
+      return _socialButton(
+        onTap: () => setState(() { _isPhoneLogin = true; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
+        icon: Icon(Icons.phone_android_rounded, color: AppColors.primaryEmerald, size: 22),
+        label: 'Continue with Phone',
+      );
+    }
+    return _socialButton(
+      onTap: () => setState(() { _isPhoneLogin = false; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
+      icon: Icon(Icons.email_outlined, color: AppColors.primaryEmerald, size: 22),
+      label: 'Continue with Email',
+    );
+  }
+
+  Widget _socialButton({required VoidCallback onTap, required Widget icon, required String label}) {
+    return GestureDetector(
+      onTap: _isLoading ? null : onTap,
+      child: Container(
+        height: 54,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.outline.withValues(alpha: 0.4)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon,
+              const SizedBox(width: 12),
+              Text(label, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

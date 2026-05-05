@@ -298,7 +298,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     final text = _messageController.text;
     if (text.isEmpty) return;
     _messageController.clear();
-    ref.read(chatProvider.notifier).sendMessage(text, 'en');
+    ref.read(chatProvider.notifier).sendMessage(text);
   }
 
   Widget _buildSuggestionChip(String label, bool isTyping) {

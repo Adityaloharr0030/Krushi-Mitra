@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +8,8 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../data/models/farm_diary_model.dart';
 import '../../../shared/widgets/loading_widget.dart';
+import '../../../core/providers/smart_context_provider.dart';
+import '../../../core/services/ai_service.dart';
 
 class FarmDiaryScreen extends ConsumerStatefulWidget {
   const FarmDiaryScreen({super.key});
@@ -182,6 +183,8 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                       child: Column(
                         children: [
                           _buildSummaryHeader(entries),
+                          const SizedBox(height: 16),
+                          _SmartAnalysisCard(entries: entries),
                           const SizedBox(height: 24),
                           if (entries.isEmpty) _buildEmptyState() else _buildEntryList(entries),
                         ],
@@ -205,6 +208,7 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
       ),
     );
   }
+
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
@@ -319,6 +323,64 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
       dropdownColor: AppColors.surfaceObsidian,
       items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
+    );
+  }
+}
+
+class _SmartAnalysisCard extends ConsumerWidget {
+  final List<FarmDiaryEntry> entries;
+  const _SmartAnalysisCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contextData = ref.watch(ubiquitousContextProvider);
+
+    return FutureBuilder<String>(
+      future: AIService().getDiaryAnalysis(contextData),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.only(bottom: 24),
+          decoration: BoxDecoration(
+            color: AppColors.primaryEmerald.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              const Text('💡', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SMART BUDGET TIP',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryEmerald,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      snapshot.data!,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

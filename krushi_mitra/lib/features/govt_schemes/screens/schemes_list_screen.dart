@@ -14,7 +14,8 @@ class SchemesListScreen extends StatefulWidget {
 
 class _SchemesListScreenState extends State<SchemesListScreen> {
   String _selectedFilter = 'All';
-  final List<String> _filters = ['All', 'Central', 'State', 'Subsidy', 'Insurance'];
+  String _searchQuery = '';
+  final List<String> _filters = ['All', 'Central', 'Subsidy', 'Pension', 'Insurance'];
 
   // Original Government Schemes Data (Populated with real Indian schemes)
   final List<Scheme> _originalSchemes = [
@@ -29,6 +30,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Bank Passbook', 'Land Ownership Details'],
       howToApply: '1. Visit pmkisan.gov.in\n2. Click on New Farmer Registration\n3. Enter Aadhaar and Bank details',
       websiteLink: 'https://pmkisan.gov.in',
+      applyLink: 'https://pmkisan.gov.in/RegistrationForm.aspx',
       helplineNumber: '155261',
     ),
     Scheme(
@@ -42,6 +44,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Sowing Certificate', 'Land Records'],
       howToApply: 'Apply via CSC centers or directly on the PMFBY portal.',
       websiteLink: 'https://pmfby.gov.in',
+      applyLink: 'https://pmfby.gov.in/farmerRegistrationForm',
       helplineNumber: '14447',
     ),
     Scheme(
@@ -55,6 +58,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Soil Sample'],
       howToApply: 'Contact local Agriculture Officer or visit soilhealth.dac.gov.in',
       websiteLink: 'https://soilhealth.dac.gov.in',
+      applyLink: 'https://soilhealth.dac.gov.in/farmer-registration',
       helplineNumber: '1800-180-1551',
     ),
     Scheme(
@@ -68,6 +72,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Land Documents', 'Passport size photo'],
       howToApply: 'Visit your nearest bank branch or apply via the PM-Kisan portal.',
       websiteLink: 'https://www.myscheme.gov.in/schemes/kcc',
+      applyLink: 'https://www.myscheme.gov.in/schemes/kcc',
       helplineNumber: '1800-11-5526',
     ),
     Scheme(
@@ -81,7 +86,36 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Drip/Sprinkler Invoice', 'Land Map'],
       howToApply: 'Apply on the State Agriculture Department portal or via District Office.',
       websiteLink: 'https://pmksy.gov.in',
+      applyLink: 'https://pmksy.gov.in/registration',
       helplineNumber: '1800-180-1551',
+    ),
+    Scheme(
+      id: '6',
+      name: 'Paramparagat Krishi Vikas Yojana',
+      description: 'Promotes organic farming through a cluster approach and PGS (Participatory Guarantee System) certification.',
+      ministryLogo: 'https://pgsindia-ncof.gov.in/images/logo.png',
+      deadline: DateTime.now().add(const Duration(days: 45)),
+      benefitAmount: '₹50,000 / ha (3 years)',
+      eligibilityCriteria: ['Groups of 20 or more farmers', 'Willingness to adopt organic practices'],
+      requiredDocuments: ['Aadhaar Card', 'Land Map', 'Group Resolution'],
+      howToApply: 'Register on the Jaivikkheti portal or via local Regional Council.',
+      websiteLink: 'https://www.jaivikkheti.in',
+      applyLink: 'https://www.jaivikkheti.in/farmer-registration',
+      helplineNumber: '0120-2764906',
+    ),
+    Scheme(
+      id: '7',
+      name: 'PM Kisan Maandhan Yojana',
+      description: 'A voluntary and contributory pension scheme for small and marginal farmers to ensure social security.',
+      ministryLogo: 'https://maandhan.in/images/logo.png',
+      deadline: DateTime.now().add(const Duration(days: 120)),
+      benefitAmount: '₹3,000 Monthly Pension',
+      eligibilityCriteria: ['Age 18-40 years', 'Small and Marginal farmers with land up to 2 hectares'],
+      requiredDocuments: ['Aadhaar Card', 'Savings Bank Account', 'Kisan Card'],
+      howToApply: 'Enroll at nearest Common Service Center (CSC) or self-enroll on maandhan.in',
+      websiteLink: 'https://maandhan.in',
+      applyLink: 'https://maandhan.in/scheme/pmkmy',
+      helplineNumber: '1800-267-6888',
     ),
   ];
 
@@ -116,6 +150,11 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: TextField(
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
         decoration: InputDecoration(
           hintText: 'Search official schemes...',
           prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryEmerald),
@@ -178,11 +217,52 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
   }
 
   Widget _buildSchemeList() {
+    final filteredSchemes = _originalSchemes.where((scheme) {
+      final matchesSearch = scheme.name.toLowerCase().contains(_searchQuery) ||
+          scheme.description.toLowerCase().contains(_searchQuery);
+      
+      bool matchesFilter = true;
+      if (_selectedFilter == 'Subsidy') {
+        matchesFilter = scheme.description.toLowerCase().contains('subsidy') || 
+                        scheme.benefitAmount.toLowerCase().contains('subsidy');
+      } else if (_selectedFilter == 'Pension') {
+        matchesFilter = scheme.name.toLowerCase().contains('pension') || 
+                        scheme.name.toLowerCase().contains('maandhan');
+      } else if (_selectedFilter == 'Insurance') {
+        matchesFilter = scheme.name.toLowerCase().contains('insurance') || 
+                        scheme.name.toLowerCase().contains('bima');
+      } else if (_selectedFilter == 'Central') {
+        matchesFilter = scheme.name.startsWith('PM');
+      }
+
+      return matchesSearch && matchesFilter;
+    }).toList();
+
+    if (filteredSchemes.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 64, color: AppColors.outlineVariant),
+            const SizedBox(height: 16),
+            Text(
+              'No schemes found',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(20),
-      itemCount: _originalSchemes.length,
+      itemCount: filteredSchemes.length,
       itemBuilder: (context, index) {
-        final scheme = _originalSchemes[index];
+        final scheme = filteredSchemes[index];
         final daysLeft = scheme.deadline.difference(DateTime.now()).inDays;
         
         return Container(

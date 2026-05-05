@@ -7,6 +7,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/ai_doctor_provider.dart';
 import '../../../core/services/ai_service.dart';
+import '../../../core/providers/weather_provider.dart';
+import '../../../core/providers/smart_context_provider.dart';
 
 class AIDoctorScreen extends ConsumerStatefulWidget {
   const AIDoctorScreen({super.key});
@@ -52,6 +54,8 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                       color: AppColors.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  const _SmartWeatherAlert(),
                   const SizedBox(height: 24),
                   _buildCameraHero(aiState),
                   const SizedBox(height: 24),
@@ -513,5 +517,61 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
         ),
       ],
     );
+  }
+}
+
+class _SmartWeatherAlert extends ConsumerWidget {
+  const _SmartWeatherAlert();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contextData = ref.watch(ubiquitousContextProvider);
+
+    return contextData.weather != null ? FutureBuilder<String>(
+      future: AIService().getWeatherAnalysis(contextData),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.accentAmber.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Text('☁️', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LIVE WEATHER CONTEXT',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.accentAmber,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      snapshot.data!,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ) : const SizedBox.shrink();
   }
 }

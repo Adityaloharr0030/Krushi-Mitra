@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/market_service.dart';
+import '../../../../data/models/market_price_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class MarketScreen extends StatefulWidget {

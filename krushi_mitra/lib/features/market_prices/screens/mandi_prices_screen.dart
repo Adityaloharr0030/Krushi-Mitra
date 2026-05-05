@@ -5,7 +5,10 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/market_provider.dart';
-import '../../../core/services/market_service.dart';
+import '../../../core/services/ai_service.dart';
+import '../../../data/models/market_price_model.dart';
+import '../../../core/providers/smart_context_provider.dart';
+import '../../../data/models/smart_context_model.dart';
 
 class MandiPricesScreen extends ConsumerStatefulWidget {
   const MandiPricesScreen({super.key});
@@ -15,12 +18,13 @@ class MandiPricesScreen extends ConsumerStatefulWidget {
 }
 
 class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
-  String _selectedCommodity = 'Wheat';
+  String? _selectedCommodity;
   String _selectedState = 'Maharashtra';
 
   @override
   Widget build(BuildContext context) {
     final mandiAsync = ref.watch(mandiProvider);
+    final smartContext = ref.watch(smartContextProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,21 +42,40 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         ),
       ),
       body: mandiAsync.when(
-        data: (prices) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildFilters(),
-              const SizedBox(height: 24),
-              if (prices.isNotEmpty) _buildBestMandiCard(prices.first),
-              const SizedBox(height: 24),
-              _buildPriceTrendChart(),
-              const SizedBox(height: 24),
-              _buildPriceTable(prices),
-            ],
-          ),
-        ),
+        data: (prices) {
+          final availableCommodities = prices.map((p) => p.commodity).toSet().toList()..sort();
+          if (availableCommodities.isEmpty) availableCommodities.add('Wheat');
+          
+          String currentCommodity = _selectedCommodity ?? '';
+          if (!availableCommodities.contains(currentCommodity)) {
+            final profile = smartContext.profile;
+            if (profile != null && profile.cropsGrown.isNotEmpty && availableCommodities.contains(profile.cropsGrown.first)) {
+              currentCommodity = profile.cropsGrown.first;
+            } else {
+              currentCommodity = availableCommodities.first;
+            }
+          }
+
+          final filteredPrices = prices.where((p) => p.commodity == currentCommodity).toList();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildFilters(availableCommodities, currentCommodity),
+                const SizedBox(height: 24),
+                if (filteredPrices.isNotEmpty) _buildBestMandiCard(filteredPrices.first),
+                const SizedBox(height: 24),
+                _buildSmartMarketAnalysis(filteredPrices, smartContext, currentCommodity),
+                const SizedBox(height: 24),
+                _buildPriceTrendChart(),
+                const SizedBox(height: 24),
+                _buildPriceTable(filteredPrices),
+              ],
+            ),
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Padding(
@@ -73,19 +96,14 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(List<String> commodities, String currentCommodity) {
     return Row(
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            initialValue: _selectedCommodity,
-            items: const [
-              DropdownMenuItem(value: 'Wheat', child: Text('Wheat')),
-              DropdownMenuItem(value: 'Rice', child: Text('Rice')),
-              DropdownMenuItem(value: 'Onion', child: Text('Onion')),
-              DropdownMenuItem(value: 'Tomato', child: Text('Tomato')),
-            ],
+            value: currentCommodity,
+            items: commodities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (val) {
               if (val != null) setState(() => _selectedCommodity = val);
             },
@@ -108,6 +126,71 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSmartMarketAnalysis(List<MarketPrice> prices, FarmerContext smartContext, String currentCommodity) {
+    if (prices.isEmpty) return const SizedBox.shrink();
+
+    final priceData = prices.take(5).map((p) => {
+      'market': p.market,
+      'price': p.modalPrice,
+      'district': p.district,
+    }).toList();
+
+    return FutureBuilder<String>(
+      future: AIService().getMarketAnalysis(smartContext, priceData, currentCommodity),
+      builder: (context, snapshot) {
+        final advice = snapshot.data ?? 'Analyzing current market trends...';
+        
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryEmerald.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Text('💰', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI MARKET STRATEGY',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryEmerald,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      advice,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -292,7 +375,7 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
                   DataColumn(label: Text('Mandi', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textHint, fontSize: 12))),
                   DataColumn(label: Text('Modal Rate', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textHint, fontSize: 12))),
                 ],
-                rows: prices.take(10).map((p) => DataRow(
+                rows: prices.take(10).map<DataRow>((MarketPrice p) => DataRow(
                   cells: [
                     DataCell(Text(p.district, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary))),
                     DataCell(Text(p.market, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.textSecondary))),

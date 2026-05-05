@@ -7,6 +7,8 @@ class Farmer {
   final double landSize;
   final List<String> cropsGrown;
   final String preferredLanguage;
+  final String? soilType;
+  final String? irrigationSource;
 
   Farmer({
     required this.id,
@@ -17,6 +19,8 @@ class Farmer {
     required this.landSize,
     required this.cropsGrown,
     required this.preferredLanguage,
+    this.soilType,
+    this.irrigationSource,
   });
 
   // Firebase User-like compatibility getters
@@ -34,6 +38,8 @@ class Farmer {
       landSize: (json['landSize'] as num).toDouble(),
       cropsGrown: List<String>.from(json['cropsGrown'] ?? []),
       preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
+      soilType: json['soilType'] as String?,
+      irrigationSource: json['irrigationSource'] as String?,
     );
   }
 
@@ -47,6 +53,8 @@ class Farmer {
       'landSize': landSize,
       'cropsGrown': cropsGrown,
       'preferredLanguage': preferredLanguage,
+      'soilType': soilType,
+      'irrigationSource': irrigationSource,
     };
   }
 }

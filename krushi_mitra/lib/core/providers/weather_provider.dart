@@ -16,7 +16,7 @@ final weatherProvider = FutureProvider<WeatherData>((ref) async {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
         Position position = await Geolocator.getCurrentPosition();
-        return await service.getWeatherByLocation(position.latitude, position.longitude);
+        return await service.getWeatherByLocation(position.latitude, position.longitude, forceRefresh: true);
       }
     }
   } catch (e) {
@@ -28,10 +28,10 @@ final weatherProvider = FutureProvider<WeatherData>((ref) async {
   return profileAsync.maybeWhen(
     data: (profile) async {
       if (profile != null && profile.district.isNotEmpty) {
-        return await service.getWeatherByCity('${profile.district}, ${profile.state}');
+        return await service.getWeatherByCity('${profile.district}, ${profile.state}', forceRefresh: true);
       }
-      return await service.getWeatherByLocation(18.5204, 73.8567); // Pune
+      return await service.getWeatherByLocation(18.5204, 73.8567, forceRefresh: true); // Pune
     },
-    orElse: () => service.getWeatherByLocation(18.5204, 73.8567),
+    orElse: () => service.getWeatherByLocation(18.5204, 73.8567, forceRefresh: true),
   );
 });

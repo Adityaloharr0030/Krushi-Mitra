@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/ai_service.dart';
+import 'smart_context_provider.dart';
 
 class ChatMessage {
   final String role;
@@ -28,9 +29,11 @@ class ChatState {
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier() : super(ChatState());
+  final Ref _ref;
+  ChatNotifier(this._ref) : super(ChatState());
 
-  Future<void> sendMessage(String text, String lang) async {
+  Future<void> sendMessage(String text) async {
+    final context = _ref.read(ubiquitousContextProvider);
     state = state.copyWith(
       messages: [...state.messages, ChatMessage(role: 'user', text: text)],
       isTyping: true,
@@ -42,7 +45,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         'content': m.text,
       }).toList();
 
-      final response = await AIService().chat(history, text, lang);
+      final response = await AIService().chat(history, text, context);
 
       state = state.copyWith(
         messages: [...state.messages, ChatMessage(role: 'bot', text: response)],
@@ -63,5 +66,5 @@ class ChatNotifier extends StateNotifier<ChatState> {
 }
 
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  return ChatNotifier();
+  return ChatNotifier(ref);
 });

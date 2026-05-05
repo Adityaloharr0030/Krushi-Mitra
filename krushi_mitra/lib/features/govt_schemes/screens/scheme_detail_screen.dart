@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../../core/services/ai_service.dart';
-import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/smart_context_provider.dart';
 
+// ignore_for_file: use_build_context_synchronously
 class SchemeDetailScreen extends ConsumerStatefulWidget {
   final Scheme scheme;
 
@@ -19,21 +21,33 @@ class SchemeDetailScreen extends ConsumerStatefulWidget {
 class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
   bool _isAnalyzing = false;
 
+  Future<void> _launchUrl(String urlString) async {
+    final url = Uri.parse(urlString);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not launch link')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _checkEligibility() async {
     setState(() => _isAnalyzing = true);
     
     try {
-      final farmerAsync = ref.read(currentUserProvider);
-      final farmer = farmerAsync.value;
+      final contextData = ref.read(ubiquitousContextProvider);
       
-      final farmerData = {
-        'name': farmer?.name ?? 'Farmer',
-        'state': farmer?.state ?? 'Maharashtra',
-        'district': farmer?.district ?? 'Nashik',
-        'landAcres': farmer?.landSize ?? 2.5,
-        'crops': farmer?.cropsGrown ?? ['Wheat', 'Onion'],
-      };
-
       final schemeData = {
         'name': widget.scheme.name,
         'eligibility': widget.scheme.eligibilityCriteria.join(', '),
@@ -41,9 +55,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
       };
 
       final response = await AIService().checkSchemeEligibility(
-        farmerData,
+        contextData,
         schemeData,
-        'en',
       );
 
       if (mounted) {
@@ -150,7 +163,12 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
             _buildListSection(context, 'Eligibility Criteria', widget.scheme.eligibilityCriteria),
             _buildListSection(context, 'Required Documents', widget.scheme.requiredDocuments),
             _buildSection(context, 'How to Apply', widget.scheme.howToApply),
-            const SizedBox(height: 100),
+            const SizedBox(height: 32),
+            
+            // ACTION BUTTONS
+            _buildActionButtons(),
+            
+            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -190,6 +208,80 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryEmerald.withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ElevatedButton.icon(
+            onPressed: () => _launchUrl(widget.scheme.applyLink),
+            icon: const Icon(Icons.bolt_rounded, color: Colors.white),
+            label: Text(
+              'DIRECT APPLY NOW',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, 
+                fontWeight: FontWeight.w900, 
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryEmerald,
+              minimumSize: const Size(double.infinity, 64),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 0,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _launchUrl(widget.scheme.websiteLink),
+                icon: const Icon(Icons.language_rounded, color: AppColors.primaryEmerald, size: 20),
+                label: Text(
+                  'Portal',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.primaryEmerald),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primaryEmerald, width: 2),
+                  minimumSize: const Size(0, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _launchUrl('tel:${widget.scheme.helplineNumber}'),
+                icon: const Icon(Icons.headset_mic_rounded, color: AppColors.accentAmber, size: 20),
+                label: Text(
+                  'Helpline',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.accentAmber),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.accentAmber, width: 2),
+                  minimumSize: const Size(0, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

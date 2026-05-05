@@ -6,7 +6,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/weather_provider.dart';
 import '../../../core/providers/market_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/services/ai_service.dart';
 import '../../ai_doctor/screens/ai_doctor_screen.dart';
+import '../../../core/providers/smart_context_provider.dart';
 import '../../chatbot/screens/chatbot_screen.dart';
 import '../../weather/screens/weather_screen.dart';
 import '../../market_prices/screens/mandi_prices_screen.dart';
@@ -14,6 +16,7 @@ import '../../govt_schemes/screens/schemes_list_screen.dart';
 import '../../soil_advisor/screens/soil_input_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
 import '../../farm_diary/screens/farm_diary_screen.dart';
+import '../../marketplace/screens/marketplace_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -23,11 +26,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+  Future<void> _handleRefresh() async {
+    ref.invalidate(currentUserProvider);
+    ref.invalidate(weatherProvider);
+    ref.invalidate(mandiProvider);
+    ref.invalidate(smartContextProvider);
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: const _HomeContent(),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: AppColors.primaryEmerald,
+        backgroundColor: AppColors.surfaceWhite,
+        child: const _HomeContent(),
+      ),
       floatingActionButton: _buildAIFAB(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -85,6 +101,11 @@ class _HomeContent extends ConsumerWidget {
         const SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverToBoxAdapter(child: _QuickStatsRow()),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(child: _SmartInsightCard()),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
         SliverPadding(
@@ -230,6 +251,7 @@ class _QuickStatsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(weatherProvider);
     final mandiAsync = ref.watch(mandiProvider);
+    final profileAsync = ref.watch(currentUserProvider);
     
     return Row(
       children: [
@@ -254,14 +276,19 @@ class _QuickStatsRow extends ConsumerWidget {
               if (prices.isEmpty) {
                 return const _StatCard(emoji: '📈', value: 'N/A', label: 'Market');
               }
-              final wheat = prices.firstWhere(
-                (p) => p.commodity == 'Wheat', 
+              final profile = profileAsync.value;
+              final primaryCrop = (profile != null && profile.cropsGrown.isNotEmpty) 
+                  ? profile.cropsGrown.first 
+                  : 'Wheat';
+                  
+              final targetPrice = prices.firstWhere(
+                (p) => p.commodity.toLowerCase() == primaryCrop.toLowerCase(), 
                 orElse: () => prices.first,
               );
               return _StatCard(
                 emoji: '📈', 
-                value: '₹${wheat.modalPrice.round()}', 
-                label: '${wheat.commodity}/qtl', 
+                value: '₹${targetPrice.modalPrice.round()}', 
+                label: '${targetPrice.commodity}/qtl', 
                 isGood: true,
               );
             },
@@ -332,13 +359,13 @@ class _FeatureGrid extends StatelessWidget {
 
   static const _features = [
     {'emoji': '🤖', 'title': 'AI Doctor', 'subtitle': 'Diagnose crop', 'gradient': 'green'},
-    {'emoji': '🧪', 'title': 'Soil Advisor', 'subtitle': 'Fertilizer tip', 'gradient': 'purple'},
+    {'emoji': '🏪', 'title': 'Marketplace', 'subtitle': 'Sell Produce', 'gradient': 'purple'},
+    {'emoji': '🧪', 'title': 'Soil Advisor', 'subtitle': 'Fertilizer tip', 'gradient': 'teal'},
     {'emoji': '🌤️', 'title': 'Weather', 'subtitle': 'Live forecast', 'gradient': 'blue'},
     {'emoji': '💰', 'title': 'Market', 'subtitle': 'Mandi rates', 'gradient': 'amber'},
     {'emoji': '🏛️', 'title': 'Govt Schemes', 'subtitle': 'Subsidies', 'gradient': 'red'},
     {'emoji': '🗓️', 'title': 'Calendar', 'subtitle': 'Planning', 'gradient': 'teal'},
     {'emoji': '📔', 'title': 'Farm Diary', 'subtitle': 'Record spends', 'gradient': 'green'},
-    {'emoji': '🚜', 'title': 'Equipment', 'subtitle': 'Rentals', 'gradient': 'blue'},
   ];
 
   @override
@@ -382,13 +409,13 @@ class _FeatureGrid extends StatelessWidget {
     Widget? screen;
     switch (i) {
       case 0: screen = const AIDoctorScreen(); break;
-      case 1: screen = const SoilInputScreen(); break;
-      case 2: screen = const WeatherScreen(); break;
-      case 3: screen = MandiPricesScreen(); break;
-      case 4: screen = const SchemesListScreen(); break;
-      case 5: screen = const CropCalendarScreen(); break;
-      case 6: screen = FarmDiaryScreen(); break;
-      case 7: /* Equipment Screen */ break;
+      case 1: screen = const MarketplaceScreen(); break;
+      case 2: screen = const SoilInputScreen(); break;
+      case 3: screen = const WeatherScreen(); break;
+      case 4: screen = MandiPricesScreen(); break;
+      case 5: screen = const SchemesListScreen(); break;
+      case 6: screen = const CropCalendarScreen(); break;
+      case 7: screen = FarmDiaryScreen(); break;
     }
     if (screen != null) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
@@ -452,6 +479,89 @@ class _FeatureCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SmartInsightCard extends ConsumerWidget {
+  const _SmartInsightCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+        final contextData = ref.watch(ubiquitousContextProvider);
+
+        return FutureBuilder<String>(
+          future: AIService().getPersonalizedAdvice(contextData),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildLoadingCard();
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceObsidian,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Text('🧠', style: TextStyle(fontSize: 32)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AI SMART ADVICE',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryEmerald,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          snapshot.data!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+  }
+
+  Widget _buildLoadingCard() {
+    return Container(
+      height: 100,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceObsidian,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryEmerald),
       ),
     );
   }

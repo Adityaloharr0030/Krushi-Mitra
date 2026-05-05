@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/weather_provider.dart';
 import '../../../core/services/weather_service.dart';
+import '../../../core/services/ai_service.dart';
+import '../../../core/providers/smart_context_provider.dart';
 
 class WeatherScreen extends ConsumerWidget {
   const WeatherScreen({super.key});
@@ -37,7 +39,7 @@ class WeatherScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     _buildSectionTitle('🌾 AI Farming Advisories'),
                     const SizedBox(height: 12),
-                    _buildFarmingAdvisories(weather),
+                    _buildFarmingAdvisories(weather, ref),
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -267,42 +269,50 @@ class WeatherScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFarmingAdvisories(WeatherData weather) {
-    final String advice = weather.farmingAdvice;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryEmerald.withValues(alpha: 0.08), AppColors.primaryEmerald.withValues(alpha: 0.02)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryEmerald.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+  Widget _buildFarmingAdvisories(WeatherData weather, WidgetRef ref) {
+    final contextData = ref.watch(ubiquitousContextProvider);
+
+    return FutureBuilder<String>(
+      future: AIService().getWeatherAnalysis(contextData),
+      builder: (context, snapshot) {
+        final advice = snapshot.data ?? weather.farmingAdvice;
+        
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primaryEmerald.withValues(alpha: 0.08), AppColors.primaryEmerald.withValues(alpha: 0.02)],
             ),
-            child: const Text('✨', style: TextStyle(fontSize: 18)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.15)),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              advice,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14, 
-                color: AppColors.textPrimary,
-                height: 1.6,
-                fontWeight: FontWeight.w600,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Text('✨', style: TextStyle(fontSize: 18)),
               ),
-            ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  advice,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, 
+                    color: AppColors.textPrimary,
+                    height: 1.6,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

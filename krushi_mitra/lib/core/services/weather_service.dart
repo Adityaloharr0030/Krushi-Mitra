@@ -149,9 +149,9 @@ class WeatherService {
 
   String get _apiKey => dotenv.env['OPENWEATHER_API_KEY'] ?? '';
 
-  Future<WeatherData> getWeatherByLocation(double lat, double lon) async {
+  Future<WeatherData> getWeatherByLocation(double lat, double lon, {bool forceRefresh = false}) async {
     // 1. Try to load from cache first for instant UI response
-    final cached = await _getCachedWeather();
+    final cached = forceRefresh ? null : await _getCachedWeather();
     if (cached != null && DateTime.now().difference(cached.timestamp).inMinutes < 30) {
       debugPrint('WeatherService: Using fresh cache.');
       return cached;
@@ -201,7 +201,8 @@ class WeatherService {
     }
   }
 
-  Future<WeatherData> getWeatherByCity(String cityName) async {
+  Future<WeatherData> getWeatherByCity(String cityName, {bool forceRefresh = false}) async {
+    // We can also cache by city if needed, but for now just pass forceRefresh
     try {
       final currentResponse = await _dio.get(
         ApiConstants.weatherCurrentEndpoint,

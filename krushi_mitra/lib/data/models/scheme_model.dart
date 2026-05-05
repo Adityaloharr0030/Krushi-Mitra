@@ -9,6 +9,7 @@ class Scheme {
   final List<String> requiredDocuments;
   final String howToApply;
   final String websiteLink;
+  final String applyLink;
   final String helplineNumber;
 
   Scheme({
@@ -22,6 +23,7 @@ class Scheme {
     required this.requiredDocuments,
     required this.howToApply,
     required this.websiteLink,
+    required this.applyLink,
     required this.helplineNumber,
   });
 
@@ -37,6 +39,7 @@ class Scheme {
       requiredDocuments: List<String>.from(json['requiredDocuments'] ?? []),
       howToApply: json['howToApply'] as String,
       websiteLink: json['websiteLink'] as String,
+      applyLink: json['applyLink'] ?? (json['websiteLink'] as String),
       helplineNumber: json['helplineNumber'] as String,
     );
   }
@@ -53,6 +56,7 @@ class Scheme {
       'requiredDocuments': requiredDocuments,
       'howToApply': howToApply,
       'websiteLink': websiteLink,
+      'applyLink': applyLink,
       'helplineNumber': helplineNumber,
     };
   }

@@ -104,4 +104,41 @@ class DatabaseService {
       debugPrint("Firestore Diary Delete Error: $e");
     }
   }
+
+  // --- Marketplace Listings ---
+
+  Future<void> addMarketListing(Map<String, dynamic> listing) async {
+    try {
+      await _db.collection('marketplace').doc(listing['id']).set(listing);
+    } catch (e) {
+      debugPrint("Firestore Marketplace Add Error: $e");
+      rethrow;
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> getMarketListings() {
+    return _db
+        .collection('marketplace')
+        .orderBy('dateListed', descending: true)
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Future<void> deleteMarketListing(String listingId) async {
+    try {
+      await _db.collection('marketplace').doc(listingId).delete();
+    } catch (e) {
+      debugPrint("Firestore Marketplace Delete Error: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> markListingSold(String listingId) async {
+    try {
+      await _db.collection('marketplace').doc(listingId).update({'isSold': true});
+    } catch (e) {
+      debugPrint("Firestore Mark Sold Error: $e");
+    }
+  }
 }
