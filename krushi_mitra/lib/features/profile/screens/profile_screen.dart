@@ -91,9 +91,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             child: CircleAvatar(
               radius: 44,
-              backgroundColor: Colors.white,
-              backgroundImage: profile?.photoUrl != null ? NetworkImage(profile!.photoUrl!) : null,
-              child: profile?.photoUrl == null ? const Text('👨‍🌾', style: TextStyle(fontSize: 40)) : null,
+              backgroundColor: AppColors.surfaceObsidian,
+              backgroundImage: profile?.photoUrl != null 
+                ? NetworkImage(profile!.photoUrl!) 
+                : null,
+              child: profile?.photoUrl == null 
+                ? const Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary)
+                : null,
             ),
           ),
           const SizedBox(width: 20),

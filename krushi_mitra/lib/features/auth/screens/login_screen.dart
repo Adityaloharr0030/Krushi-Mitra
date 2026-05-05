@@ -129,11 +129,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           if (mounted) {
             String msg = e.message ?? 'Verification failed';
             if (e.code == 'app-not-authorized') {
-              msg = 'App not authorized. Missing SHA-1 key in Firebase Console.';
+              msg = 'App not authorized. Ensure SHA-1/SHA-256 keys are in Firebase Console.';
             } else if (e.code == 'invalid-phone-number') {
               msg = 'Invalid phone number format.';
+            } else if (e.code == 'too-many-requests') {
+              msg = 'Quota exceeded or SMS blocked. Check SMS region policy in Firebase.';
             }
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $msg', style: GoogleFonts.plusJakartaSans(fontSize: 13)), backgroundColor: AppColors.error, duration: const Duration(seconds: 4)));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed: $msg', style: GoogleFonts.plusJakartaSans(fontSize: 13)), 
+              backgroundColor: AppColors.error, 
+              duration: const Duration(seconds: 6),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(label: 'Details', textColor: Colors.white, onPressed: () {}),
+            ));
           }
           if (!completer.isCompleted) completer.completeError(e);
         },
@@ -177,12 +185,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       await ref.read(authServiceProvider).sendPasswordResetEmail(email);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Reset link sent to $email'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          SnackBar(
+            content: Text('Reset link sent to $email. Please check your Inbox and Spam folder.'), 
+            backgroundColor: AppColors.primaryEmerald, 
+            behavior: SnackBarBehavior.floating, 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyError(e.toString())), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to send reset link. Ensure the email is registered.'), 
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
       }
     }
   }

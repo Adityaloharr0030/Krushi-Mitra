@@ -19,8 +19,15 @@ class MarketplaceScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Farmer Marketplace',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Farmer Marketplace',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 18)),
+            Text('Version 2.0 - UPDATED TODAY',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.primaryEmerald, fontSize: 10)),
+          ],
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTheme.celestialGradient)),

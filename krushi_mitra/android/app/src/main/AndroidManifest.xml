@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:label="Krushi Mitra"
+        android:label="Krushi Mitra Pro"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

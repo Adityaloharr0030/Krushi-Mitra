@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../onboarding/screens/profile_setup_screen.dart';
 import '../../../shared/widgets/loading_widget.dart';
+import '../../marketplace/screens/marketplace_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -27,7 +28,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     const HomeScreen(),
     const AIDoctorScreen(),
     const WeatherScreen(),
-    const MarketPricesScreen(),
+    const MarketplaceScreen(), // Added Marketplace to nav
     const SchemesListScreen(),
     const ProfileScreen(),
   ];
@@ -133,7 +134,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             _buildNavDestination(Icons.grid_view_outlined, Icons.grid_view_rounded, 'Home'),
             _buildNavDestination(Icons.local_hospital_outlined, Icons.local_hospital_rounded, 'Doctor'),
             _buildNavDestination(Icons.cloud_outlined, Icons.cloud_rounded, 'Weather'),
-            _buildNavDestination(Icons.analytics_outlined, Icons.analytics_rounded, 'Market'),
+            _buildNavDestination(Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Marketplace'),
             _buildNavDestination(Icons.account_balance_outlined, Icons.account_balance_rounded, 'Schemes'),
             _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
           ],

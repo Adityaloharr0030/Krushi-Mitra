@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/screens/main_screen.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/farmer_model.dart';
+import '../../../../core/services/storage_service.dart';
+import '../../../../shared/widgets/loading_widget.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -23,6 +27,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   String? _selectedState;
   String? _selectedSoilType;
   String? _selectedIrrigation;
+  File? _imageFile;
+  bool _isUploading = false;
+
+  final _storage = StorageService();
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   final List<String> _states = [
     'Maharashtra', 'Gujarat', 'Punjab', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh', 'Uttar Pradesh'
@@ -61,10 +79,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
 
     if (_nameController.text.isNotEmpty && _selectedState != null && _landSizeController.text.isNotEmpty) {
+      setState(() => _isUploading = true);
+      String? photoUrl = user.photoURL;
+
+      if (_imageFile != null) {
+        photoUrl = await _storage.uploadProfilePic(user.uid, _imageFile!);
+      }
+
       final farmer = Farmer(
         id: user.uid,
         name: _nameController.text.trim(),
-        photoUrl: user.photoURL,
+        photoUrl: photoUrl,
         state: _selectedState!,
         district: _districtController.text.isNotEmpty ? _districtController.text.trim() : 'Nashik',
         landSize: double.tryParse(_landSizeController.text) ?? 2.5,
@@ -77,6 +102,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       await ref.read(profileActionProvider.notifier).saveProfile(farmer);
 
       if (mounted) {
+        setState(() => _isUploading = false);
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
       }
     } else {
@@ -94,12 +120,53 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         elevation: 0,
         flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTheme.celestialGradient)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
+      body: _isUploading 
+        ? const Center(child: LoadingWidget(message: 'Uploading profile...'))
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3), width: 4),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.1), blurRadius: 12, spreadRadius: 4),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: AppColors.surfaceObsidian,
+                          backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                          child: _imageFile == null 
+                            ? const Icon(Icons.person_rounded, size: 60, color: AppColors.textSecondary)
+                            : null,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryEmerald,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
             const SizedBox(height: 32),
             _buildSectionTitle('BASIC INFORMATION'),
             const SizedBox(height: 16),

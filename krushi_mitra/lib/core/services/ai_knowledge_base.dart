@@ -86,14 +86,14 @@ class AIKnowledgeBase {
     for (var crop in userCrops) {
       final rules = cropExpertRules[crop];
       if (rules != null) {
-        buf.writeln('- $crop: \${rules['nutrients']} Critical stages: \${rules['critical_stages'].join(", ")}.');
+        buf.writeln("- $crop: ${rules['nutrients']} Critical stages: ${(rules['critical_stages'] as List).join(', ')}.");
       }
     }
-    buf.writeln('\nGUIDELINES: \$expertGuidelines');
+    buf.writeln('\nGUIDELINES: $expertGuidelines');
     return buf.toString();
   }
 
   static String getFewShotContext() {
-    return fewShotExamples.map((ex) => 'User: \${ex['query']}\nKrushi Mitra: \${ex['response']}').join('\n\n');
+    return fewShotExamples.map((ex) => "User: ${ex['query']}\nKrushi Mitra: ${ex['response']}").join('\n\n');
   }
 }
