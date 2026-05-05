@@ -333,8 +333,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
   }
 
   Widget _buildEligibilityChecker(BuildContext context) {
-    final isEligible = widget.scheme.name.length % 2 == 0;
-    final statusColor = isEligible ? AppColors.primaryEmerald : AppColors.accentAmber;
+    const statusColor = AppColors.neonCyan;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -351,8 +350,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
               color: statusColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              isEligible ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+            child: const Icon(
+              Icons.smart_toy_rounded,
               color: statusColor,
               size: 28,
             ),
@@ -363,7 +362,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Quick Status',
+                  'AI Eligibility Check',
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
@@ -372,7 +371,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Click the AI button below for a detailed personalized eligibility check.',
+                  'Tap the button below for a personalized, AI-driven eligibility analysis based on your farm profile.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

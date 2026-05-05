@@ -13,9 +13,11 @@ class GeminiService {
   
   // Model fallback chain — try each until one works
   static const _modelFallbacks = [
-    'gemini-2.0-flash-lite',
-    'gemini-2.0-flash', 
     'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+    'gemini-2.0-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro',
   ];
   int _currentModelIndex = 0;
   
@@ -42,6 +44,12 @@ class GeminiService {
       model: model,
       apiKey: apiKey,
       systemInstruction: systemPrompt != null ? Content.system(systemPrompt) : null,
+      safetySettings: [
+        SafetySetting(HarmCategory.harassment, HarmBlockThreshold.none),
+        SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.none),
+        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.none),
+        SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.none),
+      ],
     );
   }
 
@@ -56,44 +64,44 @@ class GeminiService {
     debugPrint('GeminiService: Switched to model: ${_currentModel}');
   }
 
-  Future<T> runWithRetry<T>(Future<T> Function(GenerativeModel model) task, {int retries = 3}) async {
+  Future<T> runWithRetry<T>(
+    Future<T> Function(GenerativeModel model) task, {
+    int retries = 15,
+    String? systemPrompt,
+  }) async {
     int attempts = 0;
     int modelTries = 0;
     
     while (attempts < retries) {
       try {
-        final model = getModel();
+        final model = getModel(systemPrompt: systemPrompt);
+        debugPrint('GeminiService: Running task with model: $_currentModel (Key Index: $_currentKeyIndex)');
         return await task(model);
       } catch (e) {
         attempts++;
         final errorStr = e.toString();
         debugPrint('GeminiService: Attempt $attempts failed (model: $_currentModel, key: $_currentKeyIndex)');
+        debugPrint('GeminiService Error Details: $errorStr');
         
-        if (errorStr.contains('limit: 0') || errorStr.contains('not found') || errorStr.contains('not supported')) {
-          // Model not available for this key — try next model
+        if (errorStr.contains('limit: 0') || errorStr.contains('not found') || errorStr.contains('not supported') || errorStr.contains('not available')) {
           _rotateModel();
           modelTries++;
           if (modelTries >= _modelFallbacks.length) {
-            // All models tried, rotate key and reset model tries
             rotateKey();
             modelTries = 0;
           }
-          // Don't count model switches as attempts
-          if (attempts > 1) {
-            await Future.delayed(const Duration(seconds: 3));
-          }
+          await Future.delayed(const Duration(milliseconds: 500));
         } else if (errorStr.contains('429') || errorStr.contains('quota') || errorStr.contains('RESOURCE_EXHAUSTED')) {
           rotateKey();
-          // Exponential backoff
-          final waitSeconds = attempts * 5;
+          final waitSeconds = attempts * 3;
           debugPrint('GeminiService: Rate limited. Waiting ${waitSeconds}s...');
           await Future.delayed(Duration(seconds: waitSeconds));
         } else if (errorStr.contains('API key not valid')) {
-          debugPrint('GeminiService: Bad key at index $_currentKeyIndex, skipping');
           rotateKey();
         } else {
+          _rotateModel();
           if (attempts >= retries) rethrow;
-          await Future.delayed(const Duration(seconds: 2));
+          await Future.delayed(const Duration(seconds: 1));
         }
       }
     }

@@ -39,7 +39,12 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
   Future<void> pickImage(ImageSource source) async {
     final context = _ref.read(ubiquitousContextProvider);
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: source);
+    final image = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
     if (image != null) {
       state = state.copyWith(selectedImage: image, isLoading: true);
       

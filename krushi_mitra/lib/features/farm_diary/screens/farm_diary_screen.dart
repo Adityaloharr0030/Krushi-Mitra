@@ -144,7 +144,7 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                         await ref.read(databaseServiceProvider).addDiaryEntry(entry);
                         Navigator.pop(ctx);
                       },
-                      child: const Text('SAVE TO CLORD'),
+                      child: const Text('SAVE ENTRY'),
                     ),
                   ),
                 ],

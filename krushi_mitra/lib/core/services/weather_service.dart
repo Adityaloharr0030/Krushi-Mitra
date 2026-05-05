@@ -147,7 +147,7 @@ class WeatherService {
     ));
   }
 
-  String get _apiKey => dotenv.env['OPENWEATHER_API_KEY'] ?? '';
+  String get _apiKey => dotenv.env['OPENWEATHER_KEY'] ?? '';
 
   Future<WeatherData> getWeatherByLocation(double lat, double lon, {bool forceRefresh = false}) async {
     // 1. Try to load from cache first for instant UI response

@@ -30,6 +30,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   bool _isGenerating = false;
   bool _isSubmitting = false;
   String _aiQuality = 'B';
+  bool _isOrganic = false;
+  bool _deliveryAvailable = false;
+  bool _isNegotiable = true;
+  final _minOrderController = TextEditingController();
 
   @override
   void initState() {
@@ -43,6 +47,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       _phoneController.text = listing.phoneNumber ?? '';
       _unit = listing.unit;
       _aiQuality = listing.quality;
+      _isOrganic = listing.isOrganic;
+      _deliveryAvailable = listing.deliveryAvailable;
+      _isNegotiable = listing.isNegotiable;
+      if (listing.minimumOrder > 0) _minOrderController.text = listing.minimumOrder.toString();
     }
   }
 
@@ -59,6 +67,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     _priceController.dispose();
     _descController.dispose();
     _phoneController.dispose();
+    _minOrderController.dispose();
     super.dispose();
   }
 
@@ -135,6 +144,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         imageUrl: widget.existingListing?.imageUrl ?? '',
         phoneNumber: _phoneController.text.trim().replaceAll(RegExp(r'[^0-9]'), ''),
         dateListed: widget.existingListing?.dateListed ?? DateTime.now(),
+        isOrganic: _isOrganic,
+        deliveryAvailable: _deliveryAvailable,
+        isNegotiable: _isNegotiable,
+        minimumOrder: double.tryParse(_minOrderController.text) ?? 0,
       );
 
       if (widget.existingListing != null) {
@@ -198,6 +211,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               _buildSectionLabel('YOUR CONTACT NUMBER'),
               const SizedBox(height: 12),
               _buildPhoneField(),
+              const SizedBox(height: 24),
+              _buildSectionLabel('PRODUCE OPTIONS'),
+              const SizedBox(height: 12),
+              _buildProduceOptions(),
               const SizedBox(height: 24),
               _buildAISection(),
               const SizedBox(height: 32),
@@ -343,6 +360,37 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildProduceOptions() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.outline.withValues(alpha: 0.3))),
+      child: Column(children: [
+        _buildSwitch('🌿 Organic Produce', 'Certified chemical-free farming', _isOrganic, (v) => setState(() => _isOrganic = v)),
+        Divider(color: AppColors.outline.withValues(alpha: 0.2), height: 24),
+        _buildSwitch('🚚 Delivery Available', 'You can deliver to buyer location', _deliveryAvailable, (v) => setState(() => _deliveryAvailable = v)),
+        Divider(color: AppColors.outline.withValues(alpha: 0.2), height: 24),
+        _buildSwitch('💬 Price Negotiable', 'Buyers can negotiate the price', _isNegotiable, (v) => setState(() => _isNegotiable = v)),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _minOrderController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: 'Minimum Order ($_unit)', prefixIcon: const Icon(Icons.shopping_basket_rounded), hintText: 'Leave empty for no minimum'),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildSwitch(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    return Row(children: [
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        const SizedBox(height: 2),
+        Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary)),
+      ])),
+      Switch.adaptive(value: value, onChanged: onChanged, activeColor: AppColors.primaryEmerald),
+    ]);
   }
 
   Widget _buildAISection() {

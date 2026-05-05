@@ -27,7 +27,7 @@ class MarketService {
     String? commodity,
     bool forceRefresh = false,
   }) async {
-    final apiKey = dotenv.env['DATA_GOV_API_KEY'] ?? '';
+    final apiKey = dotenv.env['AGMARKET_KEY'] ?? '';
     
     // 1. Load Cache (if not forcing refresh)
     final List<MarketPrice> cached = forceRefresh ? [] : await _getCachedMarket();
@@ -42,7 +42,7 @@ class MarketService {
       final Map<String, dynamic> params = {
         'api-key': apiKey,
         'format': 'json',
-        'limit': 50,
+        'limit': 500,
       };
 
       if (state != null && state.isNotEmpty) params['filters[state]'] = state;

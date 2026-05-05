@@ -96,4 +96,57 @@ class AIKnowledgeBase {
   static String getFewShotContext() {
     return fewShotExamples.map((ex) => "User: ${ex['query']}\nKrushi Mitra: ${ex['response']}").join('\n\n');
   }
+
+  // ─── OFFLINE INTELLIGENCE ENGINE ───
+  static String getOfflineAdvice(String query, List<String> crops, String location) {
+    final lowerQuery = query.toLowerCase();
+    
+    // 1. Check for specific terms (Glossary)
+    if (lowerQuery.contains('urea')) {
+      return "🧪 **Offline Advisor: Urea**\n\nUrea is a Nitrogen-rich fertilizer (46% N). It promotes green vegetative growth.\n\n**Usage**: Best applied as a top-dressing. Avoid applying on dry soil; always irrigate after application for best results.";
+    }
+    if (lowerQuery.contains('dap')) {
+      return "🧪 **Offline Advisor: DAP**\n\nDiammonium Phosphate (DAP) provides Nitrogen (18%) and Phosphorus (46%).\n\n**Usage**: Essential for root development. Best applied at the time of sowing (basal dose).";
+    }
+    if (lowerQuery.contains('npk')) {
+      return "🧪 **Offline Advisor: NPK**\n\nNPK contains Nitrogen (growth), Phosphorus (roots), and Potassium (strength/yield).\n\n**Tip**: Use NPK 19:19:19 for general growth and 0:0:50 (SOP) during grain/fruit filling.";
+    }
+    if (lowerQuery.contains('price') || lowerQuery.contains('market') || lowerQuery.contains('mandi')) {
+      return "💰 **Offline Advisor: Market**\n\nI can't fetch LIVE prices right now, but generally, Mandi prices for $location follow seasonal trends. Check the 'Market Prices' section in the app to see the last cached data.";
+    }
+    if (lowerQuery.contains('soil')) {
+      return "🌱 **Offline Advisor: Soil Health**\n\nHealthy soil is the foundation of farming. \n\n**Advice**: Conduct a soil test every 2 years. Use organic manure (FYM) to improve soil structure and water retention.";
+    }
+
+    // 2. Crop-specific logic
+    String? detectedCrop;
+    for (var crop in crops) {
+      if (lowerQuery.contains(crop.toLowerCase())) {
+        detectedCrop = crop;
+        break;
+      }
+    }
+    
+    detectedCrop ??= crops.isNotEmpty ? crops.first : 'General Farming';
+    final rules = cropExpertRules[detectedCrop];
+
+    if (rules != null) {
+      if (lowerQuery.contains('pests') || lowerQuery.contains('insect') || lowerQuery.contains('keeda')) {
+        return "🛠️ **Offline Advisor ($detectedCrop)**\n\nCommon pests: ${(rules['pests'] as List).join(', ')}.\n\n**Organic Control**: Use 5ml Neem Oil per liter of water.\n**Note**: AI analysis is offline. Please try again later for image-based diagnosis.";
+      }
+      if (lowerQuery.contains('disease') || lowerQuery.contains('problem') || lowerQuery.contains('illness')) {
+        return "🛠️ **Offline Advisor ($detectedCrop)**\n\nCommon diseases: ${(rules['diseases'] as List).join(', ')}.\n\n**Advice**: Avoid waterlogging and ensure proper spacing. Remove and burn infected plants.\n**Note**: Operating in low-data mode.";
+      }
+      if (lowerQuery.contains('water') || lowerQuery.contains('irrigation')) {
+        return "🛠️ **Offline Advisor ($detectedCrop)**\n\n**Watering Advice**: ${rules['water']}\n\n**Critical Stages**: ${(rules['critical_stages'] as List).join(', ')}.";
+      }
+      if (lowerQuery.contains('nutrient') || lowerQuery.contains('fertilizer') || lowerQuery.contains('khat')) {
+        return "🛠️ **Offline Advisor ($detectedCrop)**\n\n**Nutrient Advice**: ${rules['nutrients']}\n\n**Tip**: Always apply fertilizers based on crop stage.";
+      }
+      
+      return "🛠️ **Offline Advisor ($detectedCrop)**\n\n**Quick Insights**:\n- **Nutrients**: ${rules['nutrients']}\n- **Watering**: ${rules['water']}\n- **Critical Stages**: ${(rules['critical_stages'] as List).join(', ')}\n\nI am using my internal expert database. Please check your internet for full AI Assistant capabilities.";
+    }
+
+    return "🛠️ **Offline Advisor**\n\nI'm currently in low-data mode. For $location, ensure you are following the seasonal crop calendar. \n\n**General Tip**: Use yellow sticky traps for monitoring pests and ensure your soil has enough organic matter. \n\nPlease check your internet connection to enable full AI responses.";
+  }
 }

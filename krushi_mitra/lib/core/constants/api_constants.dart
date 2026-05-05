@@ -2,8 +2,8 @@ class ApiConstants {
   ApiConstants._();
 
   // Google Gemini AI (FREE Tier)
-  static const String geminiModel = 'gemini-2.0-flash-lite';
-  static const String geminiVisionModel = 'gemini-2.0-flash-lite';
+  static const String geminiModel = 'gemini-1.5-flash';
+  static const String geminiVisionModel = 'gemini-1.5-flash';
   static const int geminiMaxTokens = 2048;
 
   // OpenWeatherMap API

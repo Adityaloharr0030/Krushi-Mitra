@@ -20,7 +20,7 @@ class KrushiMitraApp extends ConsumerWidget {
     }
 
     return MaterialApp(
-      title: 'Krushi Mitra',
+      title: 'Krushi Mitra Pro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

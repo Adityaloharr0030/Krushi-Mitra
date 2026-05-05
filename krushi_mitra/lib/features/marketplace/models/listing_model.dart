@@ -16,6 +16,10 @@ class MarketplaceListing {
   final DateTime dateListed;
   final bool isVerified;
   final bool isSold;
+  final bool isOrganic;
+  final bool deliveryAvailable;
+  final double minimumOrder;
+  final bool isNegotiable;
 
   MarketplaceListing({
     required this.id,
@@ -33,6 +37,10 @@ class MarketplaceListing {
     required this.dateListed,
     this.isVerified = false,
     this.isSold = false,
+    this.isOrganic = false,
+    this.deliveryAvailable = false,
+    this.minimumOrder = 0,
+    this.isNegotiable = true,
   });
 
   factory MarketplaceListing.fromJson(Map<String, dynamic> json) {
@@ -54,6 +62,10 @@ class MarketplaceListing {
           : DateTime.tryParse(json['dateListed']?.toString() ?? '') ?? DateTime.now(),
       isVerified: json['isVerified'] as bool? ?? false,
       isSold: json['isSold'] as bool? ?? false,
+      isOrganic: json['isOrganic'] as bool? ?? false,
+      deliveryAvailable: json['deliveryAvailable'] as bool? ?? false,
+      minimumOrder: (json['minimumOrder'] as num?)?.toDouble() ?? 0,
+      isNegotiable: json['isNegotiable'] as bool? ?? true,
     );
   }
 
@@ -74,8 +86,15 @@ class MarketplaceListing {
       'dateListed': Timestamp.fromDate(dateListed),
       'isVerified': isVerified,
       'isSold': isSold,
+      'isOrganic': isOrganic,
+      'deliveryAvailable': deliveryAvailable,
+      'minimumOrder': minimumOrder,
+      'isNegotiable': isNegotiable,
     };
   }
+
+  /// Total listing value
+  double get totalValue => quantity * pricePerUnit;
 
   /// Get an emoji icon based on commodity name
   String get cropEmoji {
@@ -111,5 +130,15 @@ class MarketplaceListing {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
+  }
+
+  /// Freshness label based on listing date
+  String get freshnessLabel {
+    final diff = DateTime.now().difference(dateListed);
+    if (diff.inHours < 6) return '🟢 Just Listed';
+    if (diff.inHours < 24) return '🟢 Today';
+    if (diff.inDays < 3) return '🟡 Recent';
+    if (diff.inDays < 7) return '🟠 This Week';
+    return '⚪ Older';
   }
 }

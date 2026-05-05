@@ -23,8 +23,9 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mandiAsync = ref.watch(mandiProvider);
     final smartContext = ref.watch(smartContextProvider);
+    final filters = ref.watch(mandiFiltersProvider);
+    final mandiAsync = ref.watch(mandiProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -43,40 +44,28 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
       ),
       body: mandiAsync.when(
         data: (prices) {
-          final availableCommodities = prices.map((p) => p.commodity).toSet().toList()..sort();
-          if (availableCommodities.isEmpty) availableCommodities.add('Wheat');
-          
-          String currentCommodity = _selectedCommodity ?? '';
-          if (!availableCommodities.contains(currentCommodity)) {
-            final profile = smartContext.profile;
-            if (profile != null && profile.cropsGrown.isNotEmpty && availableCommodities.contains(profile.cropsGrown.first)) {
-              currentCommodity = profile.cropsGrown.first;
-            } else {
-              currentCommodity = availableCommodities.first;
-            }
-          }
-
-          final filteredPrices = prices.where((p) => p.commodity == currentCommodity).toList();
+          final availableCommodities = ['Wheat', 'Onion', 'Tomato', 'Cotton', 'Rice', 'Soyabean', 'Potato', 'Maize', 'Gram', 'Jowar'];
+          final currentCommodity = filters.commodity ?? (smartContext.profile?.cropsGrown.firstOrNull ?? 'Wheat');
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildFilters(availableCommodities, currentCommodity),
+                _buildFilters(availableCommodities, currentCommodity, filters.state),
                 const SizedBox(height: 24),
-                if (filteredPrices.isNotEmpty) _buildBestMandiCard(filteredPrices.first),
+                if (prices.isNotEmpty) _buildBestMandiCard(prices.first),
                 const SizedBox(height: 24),
-                _buildSmartMarketAnalysis(filteredPrices, smartContext, currentCommodity),
+                _buildSmartMarketAnalysis(prices, smartContext, currentCommodity),
                 const SizedBox(height: 24),
-                _buildPriceTrendChart(filteredPrices),
+                _buildPriceTrendChart(prices),
                 const SizedBox(height: 24),
-                _buildPriceTable(filteredPrices),
+                _buildPriceTable(prices),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryEmerald)),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32.0),
@@ -85,9 +74,14 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
               children: [
                 Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
-                Text('Connection Issue', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Market Data Unavailable', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                 const SizedBox(height: 8),
-                Text('Unable to fetch live data. Please check your internet or API keys.', textAlign: TextAlign.center, style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                Text('No records found for this selection. Try another crop or state.', textAlign: TextAlign.center, style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(mandiProvider),
+                  child: const Text('Retry'),
+                )
               ],
             ),
           ),
@@ -96,16 +90,18 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
     );
   }
 
-  Widget _buildFilters(List<String> commodities, String currentCommodity) {
+  Widget _buildFilters(List<String> commodities, String currentCommodity, String currentState) {
     return Row(
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            value: currentCommodity,
+            value: commodities.contains(currentCommodity) ? currentCommodity : commodities.first,
             items: commodities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedCommodity = val);
+              if (val != null) {
+                ref.read(mandiFiltersProvider.notifier).update((s) => (state: s.state, commodity: val));
+              }
             },
           ),
         ),
@@ -113,15 +109,15 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'State', isDense: true),
-            initialValue: _selectedState,
-            items: const [
-              DropdownMenuItem(value: 'Maharashtra', child: Text('Maharashtra')),
-              DropdownMenuItem(value: 'Uttar Pradesh', child: Text('UP')),
-              DropdownMenuItem(value: 'Punjab', child: Text('Punjab')),
-              DropdownMenuItem(value: 'Rajasthan', child: Text('Rajasthan')),
-            ],
+            value: currentState,
+            items: [
+              'Maharashtra', 'Uttar Pradesh', 'Punjab', 'Rajasthan', 'Gujarat', 
+              'Madhya Pradesh', 'Karnataka', 'Haryana'
+            ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (val) {
-               if (val != null) setState(() => _selectedState = val);
+               if (val != null) {
+                 ref.read(mandiFiltersProvider.notifier).update((s) => (state: val, commodity: s.commodity));
+               }
             },
           ),
         ),

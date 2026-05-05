@@ -5,22 +5,18 @@ import '../../data/models/market_price_model.dart';
 
 final marketServiceProvider = Provider((ref) => MarketService());
 
-final mandiProvider = FutureProvider<List<MarketPrice>>((ref) async {
-  ref.keepAlive(); // Keeps data cached at the Riverpod level for better performance
-  final service = ref.watch(marketServiceProvider);
-  final profileAsync = ref.watch(currentUserProvider);
+final mandiFiltersProvider = StateProvider<({String state, String? commodity})>((ref) {
+  final profile = ref.watch(currentUserProvider).value;
+  return (state: profile?.state ?? 'Maharashtra', commodity: null);
+});
 
-  return profileAsync.maybeWhen(
-    data: (profile) async {
-      if (profile != null) {
-        // Fetch all commodities for the state (no commodity filter)
-        return await service.getMarketPrices(
-          state: profile.state,
-          forceRefresh: true, // Bypass SharedPreferences cache
-        );
-      }
-      return await service.getMarketPrices(state: 'Maharashtra', forceRefresh: true);
-    },
-    orElse: () => service.getMarketPrices(state: 'Maharashtra', forceRefresh: true),
+final mandiProvider = FutureProvider<List<MarketPrice>>((ref) async {
+  final service = ref.watch(marketServiceProvider);
+  final filters = ref.watch(mandiFiltersProvider);
+  
+  return await service.getMarketPrices(
+    state: filters.state,
+    commodity: filters.commodity,
+    forceRefresh: true,
   );
 });

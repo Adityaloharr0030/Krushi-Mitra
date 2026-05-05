@@ -127,6 +127,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _buildHeader(),
+                const SizedBox(height: 24),
                 Center(
                   child: Stack(
                     children: [

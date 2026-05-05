@@ -93,6 +93,8 @@ class AIService {
     return 'Zaid (Summer season — March to May)';
   }
 
+
+
   static String get _currentMonth => [
     '', 'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -233,15 +235,16 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   "prevention": "3-4 specific preventive measures for future seasons"
 }''';
 
+      debugPrint('AI Doctor: Processing image, size: ${processedBytes.length} bytes');
+
       return await _gemini.runWithRetry((model) async {
-        final visionModel = _gemini.getModel(modelName: ApiConstants.geminiVisionModel);
         final content = [
-          Content.multi([
-            TextPart(prompt),
+          Content('user', [
             DataPart('image/jpeg', Uint8List.fromList(processedBytes)),
+            TextPart(prompt),
           ])
         ];
-        final response = await visionModel.generateContent(content);
+        final response = await model.generateContent(content);
         final jsonStr = _extractJson(response.text ?? '');
         return CropDiagnosis.fromJson(json.decode(jsonStr));
       });
@@ -252,17 +255,20 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   }
 
   CropDiagnosis _getMockDiagnosis(String crop) {
+    final rules = AIKnowledgeBase.cropExpertRules[crop];
+    final diseases = rules != null ? (rules['diseases'] as List).join(', ') : 'unknown issues';
+    
     return CropDiagnosis(
       cropName: crop,
-      diseaseName: 'Analysis unavailable (offline mode)',
-      symptoms: 'Could not analyze — please check your internet connection and try again.',
-      treatmentOrganic: 'Continue regular neem oil spray (5ml/L) every 10 days as preventive.',
-      treatmentChemical: 'No chemical treatment recommended without proper diagnosis.',
+      diseaseName: 'Offline Diagnostic Mode',
+      isHealthy: false,
+      severity: 'Unknown',
       confidencePercent: 0.0,
-      severity: 'Low',
-      isHealthy: true,
-      prevention: 'Regular crop monitoring, proper spacing, balanced fertilization.',
-      causes: 'Unable to determine — retry with good internet connection.',
+      symptoms: 'Could not analyze photo — please check your internet connection and try again.',
+      causes: 'Common issues for $crop at this stage include: $diseases.',
+      treatmentOrganic: rules != null ? 'Apply 5ml Neem Oil per liter of water as a general preventive measure.' : 'Maintain regular watering and monitor for pests.',
+      treatmentChemical: 'Seek advice from a local Krishi Kendra if symptoms persist.',
+      prevention: 'Ensure proper spacing, balanced fertilization, and crop rotation.',
     );
   }
 
@@ -284,29 +290,34 @@ $fewShot
 
 IMPORTANT: Use this context to personalize EVERY answer. Mention their crops by name, reference their location's climate, and factor in current weather when giving advice. If they ask about a crop they don't grow, still answer but note it's not in their current profile.''';
 
-      return await _gemini.runWithRetry((model) async {
-        final chatModel = _gemini.getModel(systemPrompt: enhancedSystemPrompt);
-        final List<Content> chatHistory = [];
-        for (var i = 0; i < history.length; i++) {
-          final msg = history[i];
-          final role = msg['role'] == 'user' ? 'user' : 'model';
-          final content = msg['content'] as String;
-          if (i == history.length - 1 && role == 'user' && content == userMessage) continue;
-          if (chatHistory.isNotEmpty && chatHistory.last.role == role) continue;
-          chatHistory.add(Content(role, [TextPart(content)]));
-        }
+      return await _gemini.runWithRetry(
+        (model) async {
+          final List<Content> chatHistory = [];
+          for (var i = 0; i < history.length; i++) {
+            final msg = history[i];
+            final role = msg['role'] == 'user' ? 'user' : 'model';
+            final content = msg['content'] as String;
+            if (i == history.length - 1 && role == 'user' && content == userMessage) continue;
+            if (chatHistory.isNotEmpty && chatHistory.last.role == role) continue;
+            chatHistory.add(Content(role, [TextPart(content)]));
+          }
 
-        final chatSession = chatModel.startChat(history: chatHistory);
-        String messageWithLang = userMessage;
-        if (chatHistory.isEmpty) {
-          messageWithLang = '${_getLanguageInstruction(context.language)}\n\n$userMessage';
-        }
-        final response = await chatSession.sendMessage(Content.text(messageWithLang));
-        return response.text ?? 'I could not generate a response. Please try again.';
-      });
+          final chatSession = model.startChat(history: chatHistory);
+          String messageWithLang = userMessage;
+          if (chatHistory.isEmpty) {
+            messageWithLang = '${_getLanguageInstruction(context.language)}\n\n$userMessage';
+          }
+          
+          final response = await chatSession.sendMessage(Content.text(messageWithLang));
+          return response.text ?? 'I could not generate a response. Please try again.';
+        },
+        systemPrompt: enhancedSystemPrompt,
+      );
     } catch (e) {
       debugPrint('Chat API Error: $e');
-      return '⚠️ I encountered a technical issue. Please check your internet connection and try again.';
+      final crops = context.profile?.cropsGrown ?? [];
+      final location = '${context.profile?.district ?? ""}, ${context.profile?.state ?? "India"}';
+      return AIKnowledgeBase.getOfflineAdvice(userMessage, crops, location);
     }
   }
 
@@ -426,7 +437,20 @@ Maximum 35 words. Mention their crop by name. Be specific: "Don't spray today" o
         return response.text ?? 'Continue regular farming practices.';
       });
     } catch (e) {
-      return '🌤️ Weather advisory loading. Monitor conditions before field work.';
+      final w = context.weather;
+      final crops = context.profile?.cropsGrown ?? ["crops"];
+      if (w != null) {
+        if (w.condition.toLowerCase().contains('rain')) {
+          return "🌧️ Rain alert: Avoid spraying pesticides or fertilizer today for your ${crops.first}.";
+        }
+        if (w.windSpeed > 5) {
+          return "🌬️ High winds (${w.windSpeed}m/s): Not suitable for spraying today. Delay for better efficiency.";
+        }
+        if (w.temperature > 38) {
+          return "🔥 High Heat: Irrigate your ${crops.first} early morning or late evening. Avoid heavy field work in daytime.";
+        }
+      }
+      return '🌤️ Farming Advice: Ensure proper irrigation and monitor crops for pests.';
     }
   }
 

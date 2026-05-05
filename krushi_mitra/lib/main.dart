@@ -64,9 +64,7 @@ void main() async {
     // 5. Initialize Core Services (Fail-safe)
     try {
       final aiService = AIService();
-      if (dotenv.env['GEMINI_API_KEY'] != null) {
-        aiService.initialize();
-      }
+      aiService.initialize(); // GeminiService internally reads GEMINI_KEY_1..5
       
       MarketService().initialize();
       WeatherService().initialize();
