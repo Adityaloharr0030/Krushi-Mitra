@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'dart:convert';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/ai_service.dart';
@@ -82,7 +84,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    // Using optimized settings to keep image size small for Zero-Config Base64 support
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery, 
+      imageQuality: 40,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
     if (picked != null) {
       setState(() => _imageFile = File(picked.path));
     }
@@ -90,9 +98,43 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Future<String> _uploadImage(String id) async {
     if (_imageFile == null) return widget.existingListing?.imageUrl ?? '';
-    final ref = FirebaseStorage.instance.ref().child('marketplace').child('$id.jpg');
-    await ref.putFile(_imageFile!);
-    return await ref.getDownloadURL();
+    
+    // Attempt 1: Try real Firebase Storage
+    try {
+      final String? bucket = Firebase.app().options.storageBucket;
+      final storage = bucket != null && bucket.isNotEmpty 
+          ? FirebaseStorage.instanceFor(bucket: bucket)
+          : FirebaseStorage.instance;
+          
+      final ref = storage.ref().child('marketplace').child('$id.jpg');
+      final bytes = await _imageFile!.readAsBytes();
+      final uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+      final snapshot = await uploadTask;
+      
+      if (snapshot.state == TaskState.success) {
+        return await snapshot.ref.getDownloadURL();
+      }
+    } catch (e) {
+      debugPrint('Storage upload failed: $e');
+    }
+
+    // Attempt 2: Zero-Config Base64 Fallback (Stores image directly in database)
+    // This solves the "Storage not enabled" issue for the user automatically.
+    try {
+      debugPrint('Using Zero-Config Base64 mode...');
+      final bytes = await _imageFile!.readAsBytes();
+      
+      // Safety check for Firestore 1MB limit
+      if (bytes.length > 800000) { 
+        throw 'Photo too large for direct listing. Please take a smaller photo.';
+      }
+      
+      final base64Str = base64Encode(bytes);
+      return 'data:image/jpeg;base64,$base64Str';
+    } catch (e) {
+      debugPrint('Base64 encoding failed: $e');
+      rethrow;
+    }
   }
 
   void _generateAIDescription() async {
@@ -159,7 +201,23 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final profile = ref.read(currentUserProvider).valueOrNull;
       final id = widget.existingListing?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
       
-      final imageUrl = await _uploadImage(id);
+      String imageUrl = '';
+      try {
+        imageUrl = await _uploadImage(id);
+      } catch (e) {
+        debugPrint('Image upload failed, falling back to placeholder: $e');
+        // Use a high-quality placeholder from Unsplash so the UI still looks premium
+        imageUrl = 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=500&auto=format&fit=crop';
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Note: Photo could not be saved to cloud. Using placeholder instead.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
 
       final listing = MarketplaceListing(
         id: id,
