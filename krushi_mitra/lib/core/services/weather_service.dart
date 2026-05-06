@@ -38,70 +38,80 @@ class WeatherData {
     required this.timestamp,
   });
 
-  factory WeatherData.fromOpenWeatherJson(Map<String, dynamic> json,
-      List<HourlyForecast> hourly, List<DailyForecast> daily, List<DailyForecast> historical) {
+  factory WeatherData.fromOpenWeatherJson(
+    Map<String, dynamic> current,
+    List<HourlyForecast> hourly,
+    List<DailyForecast> daily,
+    List<DailyForecast> historical,
+  ) {
+    final weather = current['weather'][0];
+    final main = current['main'];
+    final wind = current['wind'];
+    final condition = weather['main'] as String;
+
     return WeatherData(
-      temperature: (json['main']['temp'] as num).toDouble(),
-      feelsLike: (json['main']['feels_like'] as num).toDouble(),
-      condition: json['weather'][0]['main'] as String,
-      description: json['weather'][0]['description'] as String,
-      humidity: json['main']['humidity'] as int,
-      windSpeed: (json['wind']['speed'] as num).toDouble(),
-      rainChance: ((json['pop'] ?? 0) as num).toDouble() * 100,
-      cityName: json['name'] as String? ?? 'My Location',
-      uvIndex: 0,
+      temperature: (main['temp'] as num).toDouble(),
+      feelsLike: (main['feels_like'] as num).toDouble(),
+      condition: condition,
+      description: weather['description'] as String,
+      humidity: main['humidity'] as int,
+      windSpeed: (wind['speed'] as num).toDouble(),
+      rainChance: hourly.isNotEmpty ? hourly.first.rainChance : 0.0,
+      cityName: current['name'] as String,
+      uvIndex: 5, // OpenWeather basic API doesn't provide UV in current weather
       hourlyForecasts: hourly,
       dailyForecasts: daily,
       historicalForecasts: historical,
-      farmingAdvice: _getFarmingAdvice(json['weather'][0]['main']),
+      farmingAdvice: _generateFarmingAdvice(condition.toLowerCase(), (main['temp'] as num).toDouble()),
       timestamp: DateTime.now(),
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'temperature': temperature,
-    'feelsLike': feelsLike,
-    'condition': condition,
-    'description': description,
-    'humidity': humidity,
-    'windSpeed': windSpeed,
-    'rainChance': rainChance,
-    'cityName': cityName,
-    'uvIndex': uvIndex,
-    'farmingAdvice': farmingAdvice,
-    'timestamp': timestamp.toIso8601String(),
-    // Forecasts are simplified for caching to save space if needed, 
-    // but here we'll skip complex forecast caching for brevity 
-    // or add it if necessary.
-  };
-
-  factory WeatherData.fromCache(Map<String, dynamic> json) {
-    return WeatherData(
-      temperature: json['temperature'],
-      feelsLike: json['feelsLike'],
-      condition: json['condition'],
-      description: json['description'],
-      humidity: json['humidity'],
-      windSpeed: json['windSpeed'],
-      rainChance: json['rainChance'],
-      cityName: json['cityName'],
-      uvIndex: json['uvIndex'],
-      farmingAdvice: json['farmingAdvice'],
-      timestamp: DateTime.parse(json['timestamp']),
-      hourlyForecasts: [],
-      dailyForecasts: [],
-      historicalForecasts: [],
-    );
+  static String _generateFarmingAdvice(String condition, double temp) {
+    if (temp > 35) return 'Extreme heat detected. Irrigate crops in early morning to prevent moisture loss and leaf burn.';
+    if (condition.contains('rain')) return 'Rain predicted. Postpone any fertilizer or pesticide spraying to avoid runoff.';
+    switch (condition) {
+      case 'clear': return 'Ideal day for pesticide or fertilizer application. Good sunlight for photosynthesis.';
+      case 'clouds': return 'Moderate conditions. Suitable for general field maintenance and irrigation.';
+      case 'thunderstorm': return 'Warning: Severe weather. Avoid field operations and secure loose equipment.';
+      default: return 'Favorable conditions for farming. Monitor soil moisture regularly.';
+    }
   }
 
-  static String _getFarmingAdvice(String condition) {
-    switch (condition.toLowerCase()) {
-      case 'rain': return 'Avoid spraying today. Rain expected.';
-      case 'clear': return 'Ideal day for pesticide or fertilizer application.';
-      case 'clouds': return 'Moderate conditions. Suitable for irrigation.';
-      case 'thunderstorm': return 'Warning: Avoid field operations. Secure equipment.';
-      default: return 'Check daily forecast for field planning.';
-    }
+  Map<String, dynamic> toJson() => {
+    'temp': temperature,
+    'feelsLike': feelsLike,
+    'condition': condition,
+    'desc': description,
+    'humidity': humidity,
+    'wind': windSpeed,
+    'rain': rainChance,
+    'city': cityName,
+    'uv': uvIndex,
+    'hourly': hourlyForecasts.map((e) => e.toJson()).toList(),
+    'daily': dailyForecasts.map((e) => e.toJson()).toList(),
+    'historical': historicalForecasts.map((e) => e.toJson()).toList(),
+    'advice': farmingAdvice,
+    'time': timestamp.toIso8601String(),
+  };
+
+  factory WeatherData.fromCache(Map<String, dynamic> j) {
+    return WeatherData(
+      temperature: j['temp'],
+      feelsLike: j['feelsLike'],
+      condition: j['condition'],
+      description: j['desc'],
+      humidity: j['humidity'],
+      windSpeed: j['wind'],
+      rainChance: j['rain'],
+      cityName: j['city'],
+      uvIndex: j['uv'],
+      hourlyForecasts: (j['hourly'] as List).map((e) => HourlyForecast.fromJson(e)).toList(),
+      dailyForecasts: (j['daily'] as List).map((e) => DailyForecast.fromJson(e)).toList(),
+      historicalForecasts: (j['historical'] as List).map((e) => DailyForecast.fromJson(e)).toList(),
+      farmingAdvice: j['advice'],
+      timestamp: DateTime.parse(j['time']),
+    );
   }
 }
 
@@ -121,6 +131,24 @@ class HourlyForecast {
     required this.windSpeed,
     required this.humidity,
   });
+
+  Map<String, dynamic> toJson() => {
+    'dt': time.millisecondsSinceEpoch ~/ 1000,
+    'temp': temperature,
+    'cond': condition,
+    'rain': rainChance,
+    'wind': windSpeed,
+    'hum': humidity,
+  };
+
+  factory HourlyForecast.fromJson(Map<String, dynamic> j) => HourlyForecast(
+    time: DateTime.fromMillisecondsSinceEpoch(j['dt'] * 1000),
+    temperature: j['temp'],
+    condition: j['cond'],
+    rainChance: j['rain'],
+    windSpeed: j['wind'],
+    humidity: j['hum'],
+  );
 }
 
 class DailyForecast {
@@ -137,6 +165,22 @@ class DailyForecast {
     required this.condition,
     required this.rainChance,
   });
+
+  Map<String, dynamic> toJson() => {
+    'dt': date.millisecondsSinceEpoch ~/ 1000,
+    'min': minTemp,
+    'max': maxTemp,
+    'cond': condition,
+    'rain': rainChance,
+  };
+
+  factory DailyForecast.fromJson(Map<String, dynamic> j) => DailyForecast(
+    date: DateTime.fromMillisecondsSinceEpoch(j['dt'] * 1000),
+    minTemp: j['min'],
+    maxTemp: j['max'],
+    condition: j['cond'],
+    rainChance: j['rain'],
+  );
 }
 
 class WeatherService {
@@ -150,7 +194,7 @@ class WeatherService {
   void initialize() {
     _dio = Dio(BaseOptions(
       baseUrl: ApiConstants.weatherBaseUrl,
-      connectTimeout: const Duration(seconds: 10), // Faster timeout for production feel
+      connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
     ));
   }
@@ -158,72 +202,50 @@ class WeatherService {
   String get _apiKey => dotenv.env['OPENWEATHER_KEY'] ?? '';
 
   Future<WeatherData> getWeatherByLocation(double lat, double lon, {bool forceRefresh = false}) async {
-    // 1. Try to load from cache first for instant UI response
     final cached = forceRefresh ? null : await _getCachedWeather();
     if (cached != null && DateTime.now().difference(cached.timestamp).inMinutes < 30) {
-      debugPrint('WeatherService: Using fresh cache.');
       return cached;
     }
 
-    if (_apiKey.isEmpty || _apiKey == 'your_openweather_api_key_here') {
-      return cached ?? _getOfflineWeatherData();
-    }
+    if (_apiKey.isEmpty) return cached ?? _getOfflineWeatherData();
 
     try {
-      final currentResponse = await _dio.get(
-        ApiConstants.weatherCurrentEndpoint,
-        queryParameters: {
-          'lat': lat,
-          'lon': lon,
-          'appid': _apiKey,
-          'units': ApiConstants.weatherUnits,
-        },
-      );
+      final responses = await Future.wait([
+        _dio.get(ApiConstants.weatherCurrentEndpoint, queryParameters: {'lat': lat, 'lon': lon, 'appid': _apiKey, 'units': ApiConstants.weatherUnits}),
+        _dio.get(ApiConstants.weatherForecastEndpoint, queryParameters: {'lat': lat, 'lon': lon, 'appid': _apiKey, 'units': ApiConstants.weatherUnits, 'cnt': 40}),
+      ]);
 
-      final forecastResponse = await _dio.get(
-        ApiConstants.weatherForecastEndpoint,
-        queryParameters: {
-          'lat': lat,
-          'lon': lon,
-          'appid': _apiKey,
-          'units': ApiConstants.weatherUnits,
-          'cnt': 40,
-        },
-      );
+      final hourly = _parseHourlyForecasts(responses[1].data['list']);
+      final daily = _parseDailyForecasts(responses[1].data['list']);
+      final data = WeatherData.fromOpenWeatherJson(responses[0].data, hourly, daily, _generateMockHistorical());
 
-      final hourly = _parseHourlyForecasts(forecastResponse.data['list']);
-      final daily = _parseDailyForecasts(forecastResponse.data['list']);
-
-      final historical = _generateMockHistorical();
-
-      final data = WeatherData.fromOpenWeatherJson(
-        currentResponse.data,
-        hourly,
-        daily,
-        historical,
-      );
-
-      // Save to disk cache
       _cacheWeather(data);
       return data;
     } catch (e) {
-      debugPrint('Weather API Error: $e. Returning cache or offline data.');
       return cached ?? _getOfflineWeatherData();
     }
   }
 
   Future<WeatherData> getWeatherByCity(String cityName, {bool forceRefresh = false}) async {
-    // We can also cache by city if needed, but for now just pass forceRefresh
+    final cached = forceRefresh ? null : await _getCachedWeather();
+    if (cached != null && cached.cityName.toLowerCase() == cityName.toLowerCase() && DateTime.now().difference(cached.timestamp).inMinutes < 30) {
+      return cached;
+    }
+
+    if (_apiKey.isEmpty) return _getOfflineWeatherData(cityName: cityName);
+
     try {
-      final currentResponse = await _dio.get(
-        ApiConstants.weatherCurrentEndpoint,
-        queryParameters: {
-          'q': cityName,
-          'appid': _apiKey,
-          'units': ApiConstants.weatherUnits,
-        },
-      );
-      return WeatherData.fromOpenWeatherJson(currentResponse.data, [], [], []);
+      final responses = await Future.wait([
+        _dio.get(ApiConstants.weatherCurrentEndpoint, queryParameters: {'q': cityName, 'appid': _apiKey, 'units': ApiConstants.weatherUnits}),
+        _dio.get(ApiConstants.weatherForecastEndpoint, queryParameters: {'q': cityName, 'appid': _apiKey, 'units': ApiConstants.weatherUnits, 'cnt': 40}),
+      ]);
+
+      final hourly = _parseHourlyForecasts(responses[1].data['list']);
+      final daily = _parseDailyForecasts(responses[1].data['list']);
+      final data = WeatherData.fromOpenWeatherJson(responses[0].data, hourly, daily, _generateMockHistorical());
+
+      _cacheWeather(data);
+      return data;
     } catch (e) {
       return _getOfflineWeatherData(cityName: cityName);
     }
@@ -240,43 +262,56 @@ class WeatherService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = prefs.getString(_cacheKey);
-      if (jsonStr != null) {
-        return WeatherData.fromCache(json.decode(jsonStr));
-      }
+      if (jsonStr != null) return WeatherData.fromCache(json.decode(jsonStr));
     } catch (_) {}
     return null;
   }
 
   WeatherData _getOfflineWeatherData({String? cityName}) {
-    return WeatherData(
-      temperature: 32.5,
-      feelsLike: 35.0,
+    final now = DateTime.now();
+    final mockDaily = List.generate(7, (i) => DailyForecast(
+      date: now.add(Duration(days: i)),
+      minTemp: 22.0 + (i % 3),
+      maxTemp: 30.0 + (i % 5),
+      condition: i % 2 == 0 ? 'Clear' : 'Clouds',
+      rainChance: i % 3 == 0 ? 20.0 : 0.0,
+    ));
+    final mockHourly = List.generate(24, (i) => HourlyForecast(
+      time: now.add(Duration(hours: i)),
+      temperature: 25.0 + (i % 4),
       condition: 'Clear',
-      description: 'Sunny with moderate breeze',
+      rainChance: 0.0,
+      windSpeed: 5.0 + (i % 3),
+      humidity: 40 + (i % 10),
+    ));
+
+    return WeatherData(
+      temperature: 28.0,
+      feelsLike: 30.0,
+      condition: 'Clear',
+      description: 'Sunny skies',
       humidity: 45,
-      windSpeed: 12.5,
-      rainChance: 5.0,
+      windSpeed: 8.0,
+      rainChance: 0.0,
       cityName: cityName ?? 'Nashik',
-      uvIndex: 8,
-      hourlyForecasts: [],
-      dailyForecasts: [],
+      uvIndex: 6,
+      hourlyForecasts: mockHourly,
+      dailyForecasts: mockDaily,
       historicalForecasts: _generateMockHistorical(),
-      farmingAdvice: 'Ideal day for spraying or harvesting in your region.',
-      timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+      farmingAdvice: 'Weather data is currently offline. Showing estimated local conditions.',
+      timestamp: now,
     );
   }
 
   List<HourlyForecast> _parseHourlyForecasts(List<dynamic> list) {
-    return list.take(8).map((item) {
-      return HourlyForecast(
-        time: DateTime.fromMillisecondsSinceEpoch((item['dt'] as int) * 1000),
-        temperature: (item['main']['temp'] as num).toDouble(),
-        condition: item['weather'][0]['main'] as String,
-        rainChance: ((item['pop'] ?? 0) as num).toDouble() * 100,
-        windSpeed: (item['wind']['speed'] as num).toDouble(),
-        humidity: item['main']['humidity'] as int,
-      );
-    }).toList();
+    return list.take(24).map((item) => HourlyForecast(
+      time: DateTime.fromMillisecondsSinceEpoch((item['dt'] as int) * 1000),
+      temperature: (item['main']['temp'] as num).toDouble(),
+      condition: item['weather'][0]['main'] as String,
+      rainChance: ((item['pop'] ?? 0) as num).toDouble() * 100,
+      windSpeed: (item['wind']['speed'] as num).toDouble(),
+      humidity: item['main']['humidity'] as int,
+    )).toList();
   }
 
   List<DailyForecast> _parseDailyForecasts(List<dynamic> list) {
@@ -286,7 +321,6 @@ class WeatherService {
       final key = '${date.year}-${date.month}-${date.day}';
       dayGroups.putIfAbsent(key, () => []).add(item);
     }
-
     return dayGroups.entries.take(7).map((entry) {
       final items = entry.value;
       final temps = items.map((i) => (i['main']['temp'] as num).toDouble()).toList();
@@ -295,25 +329,19 @@ class WeatherService {
         minTemp: temps.reduce((a, b) => a < b ? a : b),
         maxTemp: temps.reduce((a, b) => a > b ? a : b),
         condition: items.first['weather'][0]['main'] as String,
-        rainChance: ((items.map((i) => (i['pop'] ?? 0) as num).reduce((a, b) => a + b)) /
-                items.length *
-                100)
-            .toDouble(),
+        rainChance: ((items.map((i) => (i['pop'] ?? 0) as num).reduce((a, b) => a + b)) / items.length * 100).toDouble(),
       );
     }).toList();
   }
 
   List<DailyForecast> _generateMockHistorical() {
     final now = DateTime.now();
-    return List.generate(5, (index) {
-      final date = now.subtract(Duration(days: index + 1));
-      return DailyForecast(
-        date: date,
-        minTemp: 24.0 + (index % 3),
-        maxTemp: 32.0 - (index % 2),
-        condition: index % 3 == 0 ? 'Rain' : 'Clear',
-        rainChance: index % 3 == 0 ? 80.0 : 0.0,
-      );
-    });
+    return List.generate(5, (index) => DailyForecast(
+      date: now.subtract(Duration(days: index + 1)),
+      minTemp: 22.0 + (index % 3),
+      maxTemp: 31.0 - (index % 2),
+      condition: index % 3 == 0 ? 'Rain' : 'Clear',
+      rainChance: index % 3 == 0 ? 80.0 : 0.0,
+    ));
   }
 }
