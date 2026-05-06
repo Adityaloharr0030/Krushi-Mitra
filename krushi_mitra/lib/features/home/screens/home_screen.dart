@@ -204,9 +204,19 @@ class _HomeContent extends ConsumerWidget {
                           color: Colors.white.withValues(alpha: 0.3),
                           width: 1.5),
                     ),
-                    child: Center(
-                      child: Text(profile?.photoUrl != null ? '' : '👨‍🌾',
-                          style: const TextStyle(fontSize: 28)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty
+                          ? Image.network(
+                              profile!.photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                              ),
+                            )
+                          : const Center(
+                              child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                            ),
                     ),
                   ),
                 ],

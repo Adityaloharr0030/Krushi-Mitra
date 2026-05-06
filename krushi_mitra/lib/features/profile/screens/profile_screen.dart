@@ -7,9 +7,13 @@ import '../../auth/screens/auth_screens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../data/models/farmer_model.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../onboarding/screens/language_selection_screen.dart';
 import '../../onboarding/screens/profile_setup_screen.dart';
+import '../../crop_calendar/screens/crop_calendar_screen.dart';
+import '../../farm_diary/screens/farm_diary_screen.dart';
+import '../../chatbot/screens/chatbot_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -19,9 +23,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _weatherAlerts = true;
-  bool _schemeAlerts = true;
-  bool _priceAlerts = false;
+  // Local state is now handled by the profile object itself
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             children: [
               _buildProfileHeader(profile),
+              const SizedBox(height: 16),
+              _buildQuickActions(context),
               const SizedBox(height: 16),
               _buildSettingsSection(profile),
               const SizedBox(height: 24),
@@ -73,7 +77,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildProfileHeader(dynamic profile) {
     final name = profile?.name ?? 'Guest User';
     final location = profile != null ? '${profile.district}, ${profile.state}' : 'Location not set';
-    final farmInfo = profile != null ? 'Farm: ${profile.landSize} Acres • ${profile.cropsGrown.join(", ")}' : 'Complete profile for full access';
+    final crops = profile?.cropsGrown ?? [];
+    final farmInfo = profile != null 
+      ? 'Farm: ${profile.landSize} Acres • ${crops.isEmpty ? "No crops set" : crops.join(", ")}' 
+      : 'Complete profile for full access';
 
     return Container(
       padding: const EdgeInsets.all(32),
@@ -89,15 +96,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: CircleAvatar(
-              radius: 44,
-              backgroundColor: AppColors.surfaceObsidian,
-              backgroundImage: profile?.photoUrl != null 
-                ? NetworkImage(profile!.photoUrl!) 
-                : null,
-              child: profile?.photoUrl == null 
-                ? Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary)
-                : null,
+            child: Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceObsidian,
+                shape: BoxShape.circle,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(44),
+                child: profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty
+                    ? Image.network(
+                        profile.photoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary),
+                      )
+                    : Icon(Icons.person_rounded, size: 40, color: AppColors.textSecondary),
+              ),
             ),
           ),
           const SizedBox(width: 20),
@@ -169,6 +184,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildQuickActions(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        children: [
+          _buildActionCard(Icons.inventory_2_rounded, 'My Crops', AppColors.primaryEmerald, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CropCalendarScreen()));
+          }),
+          const SizedBox(width: 12),
+          _buildActionCard(Icons.menu_book_rounded, 'Farm Diary', AppColors.accentAmber, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => FarmDiaryScreen()));
+          }),
+          const SizedBox(width: 12),
+          _buildActionCard(Icons.support_agent_rounded, 'Support', Colors.blueAccent, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(IconData icon, String title, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.outline),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsSection(dynamic profile) {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
@@ -206,27 +273,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSwitchTile(
             Icons.wb_sunny_rounded, 
             'Weather & AI Alerts', 
-            _weatherAlerts, 
-            (val) => setState(() => _weatherAlerts = val),
+            profile?.weatherAlerts ?? true, 
+            (val) => _updatePreference(profile, 'weatherAlerts', val),
             subtitle: 'Spraying limits, extreme rain',
           ),
           _buildSwitchTile(
             Icons.account_balance_rounded, 
             'Government Schemes', 
-            _schemeAlerts, 
-            (val) => setState(() => _schemeAlerts = val),
+            profile?.schemeAlerts ?? true, 
+            (val) => _updatePreference(profile, 'schemeAlerts', val),
             subtitle: 'New schemes & deadlines',
           ),
           _buildSwitchTile(
             Icons.storefront_rounded, 
             'Mandi Price Alerts', 
-            _priceAlerts, 
-            (val) => setState(() => _priceAlerts = val),
+            profile?.priceAlerts ?? false, 
+            (val) => _updatePreference(profile, 'priceAlerts', val),
             subtitle: 'When prices cross thresholds',
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _updatePreference(Farmer? profile, String key, bool value) async {
+    if (profile == null) return;
+    
+    final updatedProfile = profile.copyWith(
+      weatherAlerts: key == 'weatherAlerts' ? value : profile.weatherAlerts,
+      schemeAlerts: key == 'schemeAlerts' ? value : profile.schemeAlerts,
+      priceAlerts: key == 'priceAlerts' ? value : profile.priceAlerts,
+    );
+    
+    await ref.read(profileActionProvider.notifier).saveProfile(updatedProfile);
   }
 
   Widget _buildSettingsTile(IconData icon, String title, String value, VoidCallback onTap) {

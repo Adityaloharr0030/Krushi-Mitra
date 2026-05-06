@@ -21,7 +21,14 @@ class Farmer {
     required this.preferredLanguage,
     this.soilType,
     this.irrigationSource,
+    this.weatherAlerts = true,
+    this.schemeAlerts = true,
+    this.priceAlerts = false,
   });
+
+  final bool weatherAlerts;
+  final bool schemeAlerts;
+  final bool priceAlerts;
 
   // Firebase User-like compatibility getters
   String? get displayName => name;
@@ -40,6 +47,9 @@ class Farmer {
       preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
       soilType: json['soilType'] as String?,
       irrigationSource: json['irrigationSource'] as String?,
+      weatherAlerts: json['weatherAlerts'] as bool? ?? true,
+      schemeAlerts: json['schemeAlerts'] as bool? ?? true,
+      priceAlerts: json['priceAlerts'] as bool? ?? false,
     );
   }
 
@@ -55,6 +65,41 @@ class Farmer {
       'preferredLanguage': preferredLanguage,
       'soilType': soilType,
       'irrigationSource': irrigationSource,
+      'weatherAlerts': weatherAlerts,
+      'schemeAlerts': schemeAlerts,
+      'priceAlerts': priceAlerts,
     };
+  }
+
+  Farmer copyWith({
+    String? id,
+    String? name,
+    String? photoUrl,
+    String? state,
+    String? district,
+    double? landSize,
+    List<String>? cropsGrown,
+    String? preferredLanguage,
+    String? soilType,
+    String? irrigationSource,
+    bool? weatherAlerts,
+    bool? schemeAlerts,
+    bool? priceAlerts,
+  }) {
+    return Farmer(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      photoUrl: photoUrl ?? this.photoUrl,
+      state: state ?? this.state,
+      district: district ?? this.district,
+      landSize: landSize ?? this.landSize,
+      cropsGrown: cropsGrown ?? this.cropsGrown,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      soilType: soilType ?? this.soilType,
+      irrigationSource: irrigationSource ?? this.irrigationSource,
+      weatherAlerts: weatherAlerts ?? this.weatherAlerts,
+      schemeAlerts: schemeAlerts ?? this.schemeAlerts,
+      priceAlerts: priceAlerts ?? this.priceAlerts,
+    );
   }
 }

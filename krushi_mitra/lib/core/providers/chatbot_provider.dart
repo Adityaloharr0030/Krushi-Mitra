@@ -52,9 +52,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isTyping: false,
       );
     } catch (e) {
+      final errorStr = e.toString();
+      String errorMsg = 'Sorry, I encountered an error. Please try again.';
+      
+      if (errorStr.contains('OFFLINE') || errorStr.contains('connection')) {
+        errorMsg = '📡 **Connection Error**\n\nPlease check your internet and try again. I can only provide limited help while offline.';
+      } else if (errorStr.contains('Quota') || errorStr.contains('exhausted')) {
+        errorMsg = '⏳ **Service Busy**\n\nThe AI servers are currently at capacity. Please try again in a few minutes.';
+      }
+
       state = state.copyWith(
         isTyping: false,
-        messages: [...state.messages, ChatMessage(role: 'bot', text: 'Sorry, I encountered an error. Please try again.')],
+        messages: [...state.messages, ChatMessage(role: 'bot', text: errorMsg)],
       );
       debugPrint('Chat Error: $e');
     }

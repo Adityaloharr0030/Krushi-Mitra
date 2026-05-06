@@ -250,21 +250,27 @@ Respond ONLY in valid JSON (no markdown, no backticks):
       });
     } catch (e) {
       debugPrint('AI Doctor Error: $e');
-      return _getMockDiagnosis('Crop');
+      final errorStr = e.toString();
+      if (errorStr.contains('OFFLINE')) {
+        return _getMockDiagnosis('Crop', isOffline: true);
+      }
+      return _getMockDiagnosis('Crop', isOffline: false);
     }
   }
 
-  CropDiagnosis _getMockDiagnosis(String crop) {
+  CropDiagnosis _getMockDiagnosis(String crop, {bool isOffline = false}) {
     final rules = AIKnowledgeBase.cropExpertRules[crop];
     final diseases = rules != null ? (rules['diseases'] as List).join(', ') : 'unknown issues';
     
     return CropDiagnosis(
       cropName: crop,
-      diseaseName: 'Offline Diagnostic Mode',
+      diseaseName: isOffline ? 'Offline Diagnostic Mode' : 'AI Service Unavailable',
       isHealthy: false,
       severity: 'Unknown',
       confidencePercent: 0.0,
-      symptoms: 'Could not analyze photo — please check your internet connection and try again.',
+      symptoms: isOffline 
+          ? 'Could not analyze photo — please check your internet connection and try again.'
+          : 'The AI service is currently busy or under maintenance. Using local knowledge base.',
       causes: 'Common issues for $crop at this stage include: $diseases.',
       treatmentOrganic: rules != null ? 'Apply 5ml Neem Oil per liter of water as a general preventive measure.' : 'Maintain regular watering and monitor for pests.',
       treatmentChemical: 'Seek advice from a local Krishi Kendra if symptoms persist.',
@@ -315,9 +321,15 @@ IMPORTANT: Use this context to personalize EVERY answer. Mention their crops by 
       );
     } catch (e) {
       debugPrint('Chat API Error: $e');
+      final errorStr = e.toString();
       final crops = context.profile?.cropsGrown ?? [];
       final location = '${context.profile?.district ?? ""}, ${context.profile?.state ?? "India"}';
-      return AIKnowledgeBase.getOfflineAdvice(userMessage, crops, location);
+      
+      if (errorStr.contains('OFFLINE')) {
+        return AIKnowledgeBase.getOfflineAdvice(userMessage, crops, location);
+      }
+      
+      return '🤖 **AI Service Update**\n\nI am currently experiencing high traffic or a temporary outage. I will continue to assist you using my internal knowledge base where possible.\n\n${AIKnowledgeBase.getOfflineAdvice(userMessage, crops, location)}';
     }
   }
 

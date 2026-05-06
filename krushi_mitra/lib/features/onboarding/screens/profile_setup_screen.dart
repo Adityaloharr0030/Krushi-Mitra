@@ -53,11 +53,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authServiceProvider).currentUser;
-      if (user != null && user.displayName != null && _nameController.text.isEmpty) {
+      // 1. First check if we already have a loaded profile in the provider
+      final existingProfile = ref.read(currentUserProvider).value;
+      if (existingProfile != null) {
+        debugPrint("ProfileSetup: Pre-filling with existing data");
         setState(() {
-          _nameController.text = user.displayName!;
+          _nameController.text = existingProfile.name;
+          _districtController.text = existingProfile.district;
+          _landSizeController.text = existingProfile.landSize.toString();
+          _cropsController.text = existingProfile.cropsGrown.join(', ');
+          _selectedState = existingProfile.state;
+          _selectedSoilType = existingProfile.soilType;
+          _selectedIrrigation = existingProfile.irrigationSource;
         });
+      } else {
+        // 2. Fallback to Firebase Auth display name if new profile
+        final user = ref.read(authServiceProvider).currentUser;
+        if (user != null && user.displayName != null && _nameController.text.isEmpty) {
+          setState(() {
+            _nameController.text = user.displayName!;
+          });
+        }
       }
     });
   }
@@ -80,7 +96,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (_nameController.text.isNotEmpty && _selectedState != null && _landSizeController.text.isNotEmpty) {
       setState(() => _isUploading = true);
-      String? photoUrl = user.photoURL;
+      
+      final existingProfile = ref.read(currentUserProvider).value;
+      String? photoUrl = existingProfile?.photoUrl ?? user.photoURL;
 
       if (_imageFile != null) {
         photoUrl = await _storage.uploadProfilePic(user.uid, _imageFile!);
@@ -112,6 +130,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final existingProfile = ref.watch(currentUserProvider).value;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -144,8 +163,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         ),
                         child: CircleAvatar(
                           backgroundColor: AppColors.surfaceObsidian,
-                          backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
-                          child: _imageFile == null 
+                          backgroundImage: (_imageFile != null 
+                            ? FileImage(_imageFile!) 
+                            : (existingProfile?.photoUrl != null && existingProfile!.photoUrl!.isNotEmpty
+                                ? NetworkImage(existingProfile!.photoUrl!) 
+                                : null)) as ImageProvider?,
+                          child: (_imageFile == null && (existingProfile?.photoUrl == null || existingProfile!.photoUrl!.isEmpty)) 
                             ? Icon(Icons.person_rounded, size: 60, color: AppColors.textSecondary)
                             : null,
                         ),
@@ -169,7 +192,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-            const SizedBox(height: 32),
             _buildSectionTitle('BASIC INFORMATION'),
             const SizedBox(height: 16),
             _buildTextField(_nameController, 'Full Name', Icons.person_outline_rounded),

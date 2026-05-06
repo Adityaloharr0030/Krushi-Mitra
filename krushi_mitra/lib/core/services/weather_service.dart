@@ -17,6 +17,7 @@ class WeatherData {
   final int uvIndex;
   final List<HourlyForecast> hourlyForecasts;
   final List<DailyForecast> dailyForecasts;
+  final List<DailyForecast> historicalForecasts;
   final String farmingAdvice;
   final DateTime timestamp;
 
@@ -32,12 +33,13 @@ class WeatherData {
     required this.uvIndex,
     required this.hourlyForecasts,
     required this.dailyForecasts,
+    required this.historicalForecasts,
     required this.farmingAdvice,
     required this.timestamp,
   });
 
   factory WeatherData.fromOpenWeatherJson(Map<String, dynamic> json,
-      List<HourlyForecast> hourly, List<DailyForecast> daily) {
+      List<HourlyForecast> hourly, List<DailyForecast> daily, List<DailyForecast> historical) {
     return WeatherData(
       temperature: (json['main']['temp'] as num).toDouble(),
       feelsLike: (json['main']['feels_like'] as num).toDouble(),
@@ -50,6 +52,7 @@ class WeatherData {
       uvIndex: 0,
       hourlyForecasts: hourly,
       dailyForecasts: daily,
+      historicalForecasts: historical,
       farmingAdvice: _getFarmingAdvice(json['weather'][0]['main']),
       timestamp: DateTime.now(),
     );
@@ -87,6 +90,7 @@ class WeatherData {
       timestamp: DateTime.parse(json['timestamp']),
       hourlyForecasts: [],
       dailyForecasts: [],
+      historicalForecasts: [],
     );
   }
 
@@ -106,12 +110,16 @@ class HourlyForecast {
   final double temperature;
   final String condition;
   final double rainChance;
+  final double windSpeed;
+  final int humidity;
 
   HourlyForecast({
     required this.time,
     required this.temperature,
     required this.condition,
     required this.rainChance,
+    required this.windSpeed,
+    required this.humidity,
   });
 }
 
@@ -186,10 +194,13 @@ class WeatherService {
       final hourly = _parseHourlyForecasts(forecastResponse.data['list']);
       final daily = _parseDailyForecasts(forecastResponse.data['list']);
 
+      final historical = _generateMockHistorical();
+
       final data = WeatherData.fromOpenWeatherJson(
         currentResponse.data,
         hourly,
         daily,
+        historical,
       );
 
       // Save to disk cache
@@ -212,7 +223,7 @@ class WeatherService {
           'units': ApiConstants.weatherUnits,
         },
       );
-      return WeatherData.fromOpenWeatherJson(currentResponse.data, [], []);
+      return WeatherData.fromOpenWeatherJson(currentResponse.data, [], [], []);
     } catch (e) {
       return _getOfflineWeatherData(cityName: cityName);
     }
@@ -249,6 +260,7 @@ class WeatherService {
       uvIndex: 8,
       hourlyForecasts: [],
       dailyForecasts: [],
+      historicalForecasts: _generateMockHistorical(),
       farmingAdvice: 'Ideal day for spraying or harvesting in your region.',
       timestamp: DateTime.now().subtract(const Duration(hours: 1)),
     );
@@ -261,6 +273,8 @@ class WeatherService {
         temperature: (item['main']['temp'] as num).toDouble(),
         condition: item['weather'][0]['main'] as String,
         rainChance: ((item['pop'] ?? 0) as num).toDouble() * 100,
+        windSpeed: (item['wind']['speed'] as num).toDouble(),
+        humidity: item['main']['humidity'] as int,
       );
     }).toList();
   }
@@ -287,5 +301,19 @@ class WeatherService {
             .toDouble(),
       );
     }).toList();
+  }
+
+  List<DailyForecast> _generateMockHistorical() {
+    final now = DateTime.now();
+    return List.generate(5, (index) {
+      final date = now.subtract(Duration(days: index + 1));
+      return DailyForecast(
+        date: date,
+        minTemp: 24.0 + (index % 3),
+        maxTemp: 32.0 - (index % 2),
+        condition: index % 3 == 0 ? 'Rain' : 'Clear',
+        rainChance: index % 3 == 0 ? 80.0 : 0.0,
+      );
+    });
   }
 }
