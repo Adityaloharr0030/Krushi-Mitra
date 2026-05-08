@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/marketplace_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/listing_model.dart';
@@ -55,17 +56,14 @@ class ListingDetailScreen extends StatelessWidget {
 
   Widget _buildSliverAppBar(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 220,
+      expandedHeight: 300,
       pinned: true,
       backgroundColor: AppColors.background,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
         icon: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.3),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
           child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
         ),
       ),
@@ -74,56 +72,56 @@ class ListingDetailScreen extends StatelessWidget {
           onPressed: () => _shareListing(),
           icon: Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
             child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
           ),
         ),
         const SizedBox(width: 8),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primaryEmerald.withValues(alpha: 0.15),
-                AppColors.neonCyan.withValues(alpha: 0.08),
-                AppColors.background,
-              ],
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Hero(
+              tag: 'listing_${listing.id}',
+              child: MarketplaceImage(
+                imageUrl: listing.imageUrl,
+                emojiFallback: listing.cropEmoji,
+              ),
             ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryEmerald.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.25), width: 2),
+            // Gradient overlay for better text readability
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.4),
+                    Colors.transparent,
+                    AppColors.background.withValues(alpha: 0.8),
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.4, 0.8, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 20, left: 20, right: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.primaryEmerald, borderRadius: BorderRadius.circular(8)),
+                    child: Text(listing.commodity.toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1)),
                   ),
-                  child: Center(child: Text(listing.cropEmoji, style: const TextStyle(fontSize: 48))),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  listing.commodity,
-                  style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  listing.freshnessLabel,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(listing.commodity, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+                  Text(listing.freshnessLabel, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.8))),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -386,7 +384,7 @@ class ListingDetailScreen extends StatelessWidget {
             height: 58,
             child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('tel:${listing.phoneNumber}')),
-              icon: const Icon(Icons.call_rounded, size: 22),
+              icon: const Icon(Icons.phone_in_talk_rounded, size: 22),
               label: Text('Call Farmer', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryEmerald,
@@ -412,7 +410,7 @@ class ListingDetailScreen extends StatelessWidget {
                           : 'Hi, I saw your ${listing.commodity} listing (₹${listing.pricePerUnit.toStringAsFixed(0)}/${listing.unit}) on Krushi Mitra Pro. I want to buy ${listing.quantity} ${listing.unit}.';
                       launchUrl(Uri.parse('https://wa.me/91$phone?text=${Uri.encodeComponent(message)}'));
                     },
-                    icon: const Icon(Icons.chat_rounded, size: 18),
+                    icon: const Icon(Icons.forum_rounded, size: 18),
                     label: Text('WhatsApp', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF25D366),
@@ -432,7 +430,7 @@ class ListingDetailScreen extends StatelessWidget {
                       final phone = listing.phoneNumber!.replaceAll(RegExp(r'[^0-9]'), '');
                       launchUrl(Uri.parse('sms:$phone?body=Hi, I want to buy your ${listing.commodity} from Krushi Mitra Pro.'));
                     },
-                    icon: const Icon(Icons.message_rounded, size: 18),
+                    icon: const Icon(Icons.textsms_rounded, size: 18),
                     label: Text('SMS', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.neonCyan,

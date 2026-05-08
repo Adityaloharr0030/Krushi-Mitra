@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/market_provider.dart';
+import '../../../data/models/market_price_model.dart';
 
 final selectedMarketFilterProvider = StateProvider<String>((ref) => 'All Crops');
 
@@ -67,9 +68,15 @@ class MarketPricesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMarketOverviewCard(List<dynamic> prices) {
-    // Determine overall trend (dummy logic for premium feel)
-    final isBullish = prices.length % 2 == 0; 
+  Widget _buildMarketOverviewCard(List<MarketPrice> prices) {
+    // Determine trend based on actual price spread (modal vs min average)
+    bool isBullish = true;
+    if (prices.isNotEmpty) {
+      final avgModal = prices.fold(0.0, (sum, p) => sum + p.modalPrice) / prices.length;
+      final avgMin = prices.fold(0.0, (sum, p) => sum + p.minPrice) / prices.length;
+      // If modal price is significantly above min, market is strong
+      isBullish = avgModal > avgMin * 1.1;
+    }
     
     return Container(
       width: double.infinity,
@@ -133,7 +140,9 @@ class MarketPricesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Prices for ${prices.length} main commodities are currently stable across your region.',
+              prices.isNotEmpty
+                  ? 'Tracking ${prices.length} entries across ${prices.map((p) => p.market).toSet().length} mandis in ${prices.first.state}.'
+                  : 'No market data available. Pull to refresh.',
               style: GoogleFonts.manrope(fontSize: 14, color: Colors.white70),
             ),
           ],
@@ -189,19 +198,34 @@ class MarketPricesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCommodityList(List<dynamic> prices, String filter) {
-    // Very simple filtering logic for the mock categories
+  Widget _buildCommodityList(List<MarketPrice> prices, String filter) {
+    // Filter by crop category
     final filtered = filter == 'All Crops' 
         ? prices 
         : prices.where((p) {
-            if (filter == 'Grains') return ['Wheat', 'Rice', 'Maize', 'Bajra'].contains(p.commodity);
+            if (filter == 'Grains') return ['Wheat', 'Rice', 'Maize', 'Bajra', 'Jowar', 'Gram'].contains(p.commodity);
             if (filter == 'Vegetables') return ['Tomato', 'Onion', 'Potato'].contains(p.commodity);
+            if (filter == 'Fruits') return ['Banana', 'Mango', 'Grapes', 'Pomegranate'].contains(p.commodity);
             return true;
           }).toList();
 
+    if (filtered.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Center(
+          child: Text(
+            'No $filter data available for current selection.',
+            style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: filtered.map((item) {
-        final isUp = item.modalPrice > 2000; // Dummy comparison
+        // Real price spread: modal price vs min price
+        final spread = item.modalPrice - item.minPrice;
+        final isUp = spread > 0;
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -269,7 +293,7 @@ class MarketPricesScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isUp ? '+₹20' : '-₹45',
+                        '${isUp ? "+" : ""}₹${spread.round()}',
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -292,7 +316,12 @@ class MarketPricesScreen extends ConsumerWidget {
     if (name.contains('Cotton')) return '☁️';
     if (name.contains('Onion')) return '🧅';
     if (name.contains('Tomato')) return '🍅';
-    if (name.contains('Soybean')) return '🫘';
+    if (name.contains('Soyabean') || name.contains('Soybean')) return '🫘';
+    if (name.contains('Rice')) return '🍚';
+    if (name.contains('Potato')) return '🥔';
+    if (name.contains('Maize')) return '🌽';
+    if (name.contains('Gram')) return '🟡';
+    if (name.contains('Jowar')) return '🌿';
     return '🌱';
   }
 }

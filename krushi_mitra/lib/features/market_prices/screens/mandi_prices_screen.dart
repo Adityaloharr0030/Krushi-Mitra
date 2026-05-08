@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/market_provider.dart';
 import '../../../core/services/ai_service.dart';
@@ -18,8 +18,6 @@ class MandiPricesScreen extends ConsumerStatefulWidget {
 }
 
 class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
-  String? _selectedCommodity;
-  String _selectedState = 'Maharashtra';
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +94,7 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Commodity', isDense: true),
-            value: commodities.contains(currentCommodity) ? currentCommodity : commodities.first,
+            initialValue: commodities.contains(currentCommodity) ? currentCommodity : commodities.first,
             items: commodities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (val) {
               if (val != null) {
@@ -109,7 +107,7 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'State', isDense: true),
-            value: currentState,
+            initialValue: currentState,
             items: [
               'Maharashtra', 'Uttar Pradesh', 'Punjab', 'Rajasthan', 'Gujarat', 
               'Madhya Pradesh', 'Karnataka', 'Haryana'

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import '../widgets/marketplace_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/marketplace_provider.dart';
@@ -40,7 +41,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
         onRefresh: () async => ref.invalidate(marketplaceStreamProvider),
         child: listingsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryEmerald)),
-          error: (e, _) => _errState(),
+          error: (e, _) => _errState(e),
           data: (all) => _body(all, uid),
         ),
       ),
@@ -54,11 +55,20 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
     );
   }
 
-  Widget _errState() => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+  Widget _errState(Object e) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
     Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.textSecondary),
     const SizedBox(height: 16),
     Text('Could not load listings', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-    const SizedBox(height: 16),
+    const SizedBox(height: 8),
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Text(
+        e.toString(),
+        textAlign: TextAlign.center,
+        style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary.withValues(alpha: 0.6)),
+      ),
+    ),
+    const SizedBox(height: 24),
     ElevatedButton.icon(onPressed: () => ref.invalidate(marketplaceStreamProvider), icon: const Icon(Icons.refresh_rounded), label: const Text('Retry'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white)),
   ]));
 
@@ -191,69 +201,101 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
           border: Border.all(color: AppColors.outline.withValues(alpha: 0.3)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4))],
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Header
-          Padding(padding: const EdgeInsets.fromLTRB(20, 16, 20, 12), child: Row(children: [
-            Container(width: 52, height: 52,
-              decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-              child: Center(child: Text(listing.cropEmoji, style: const TextStyle(fontSize: 28)))),
-            const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(listing.commodity, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
-              const SizedBox(height: 2),
-              Text('${listing.farmerName} • ${listing.location}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
-            ])),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                child: Text('Grade ${listing.quality}', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.primaryEmerald))),
-              const SizedBox(height: 4),
-              Text(listing.timeAgo, style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textSecondary)),
-            ]),
-          ])),
-          // Badges
-          if (listing.isOrganic || listing.deliveryAvailable || listing.isNegotiable)
-            Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 10), child: Wrap(spacing: 6, children: [
-              if (listing.isOrganic) _miniBadge('🌿 Organic', const Color(0xFF22C55E)),
-              if (listing.deliveryAvailable) _miniBadge('🚚 Delivery', AppColors.neonCyan),
-              if (listing.isNegotiable) _miniBadge('💬 Negotiable', AppColors.accentAmber),
-            ])),
-          // Description
-          if (listing.description.isNotEmpty)
-            Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Text(listing.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary, height: 1.4))),
-          // Footer
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            decoration: BoxDecoration(color: AppColors.surfaceVariant.withValues(alpha: 0.3), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24))),
-            child: Row(children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${listing.quantity} ${listing.unit} available', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                Text('₹${listing.pricePerUnit.toStringAsFixed(0)}/${listing.unit}', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primaryEmerald)),
-              ]),
-              const Spacer(),
-              if (isOwner) ...[
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(existingListing: listing))),
-                  icon: const Icon(Icons.edit_rounded, size: 16),
-                  label: Text('Edit', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.primaryEmerald, side: BorderSide(color: AppColors.primaryEmerald.withValues(alpha: 0.5)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Image Header
+            Stack(
+              children: [
+                Hero(
+                  tag: 'listing_${listing.id}',
+                  child: MarketplaceImage(
+                    imageUrl: listing.imageUrl,
+                    height: 180,
+                    width: double.infinity,
+                    emojiFallback: listing.cropEmoji,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(onPressed: () => _confirmDelete(listing.id), icon: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 22), tooltip: 'Delete'),
-              ] else ...[
-                ElevatedButton.icon(
-                  onPressed: () => _showContactSheet(listing),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
-                  icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
-                  label: Text('Buy / Contact', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13)),
+                Positioned(
+                  top: 12, right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.2))),
+                    child: Text('₹${listing.pricePerUnit.toStringAsFixed(0)}/${listing.unit}', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
+                  ),
                 ),
+                if (listing.isOrganic)
+                  Positioned(
+                    top: 12, left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.9), borderRadius: BorderRadius.circular(10)),
+                      child: Text('🌿 ORGANIC', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5)),
+                    ),
+                  ),
               ],
-            ]),
-          ),
-        ]),
+            ),
+            // Content
+            Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(listing.commodity, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                  const SizedBox(height: 2),
+                  Row(children: [
+                    Icon(Icons.location_on_rounded, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text('${listing.location} • ${listing.timeAgo}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                  ]),
+                ])),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                  child: Text('Grade ${listing.quality}', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primaryEmerald))),
+              ]),
+              const SizedBox(height: 12),
+              if (listing.description.isNotEmpty)
+                Text(listing.description, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+              const SizedBox(height: 16),
+              // Footer / Actions
+              Row(children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${listing.quantity} ${listing.unit} available', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
+                  Text('Total: ₹${listing.totalValue.toStringAsFixed(0)}', style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary)),
+                ]),
+                const Spacer(),
+                if (isOwner) ...[
+                  IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(existingListing: listing))), icon: Icon(Icons.edit_note_rounded, color: AppColors.primaryEmerald), tooltip: 'Edit'),
+                  IconButton(onPressed: () => _confirmDelete(listing.id), icon: Icon(Icons.delete_outline_rounded, color: AppColors.error), tooltip: 'Delete'),
+                ] else ...[
+                  // Quick Contact Buttons
+                  _quickAction(Icons.phone_in_talk_rounded, AppColors.primaryEmerald, () => launchUrl(Uri.parse('tel:${listing.phoneNumber}'))),
+                  const SizedBox(width: 8),
+                  _quickAction(Icons.forum_rounded, const Color(0xFF25D366), () {
+                    final p = listing.phoneNumber?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+                    final msg = 'Hi ${listing.farmerName}, I saw your ${listing.commodity} on Krushi Mitra Pro and I am interested!';
+                    launchUrl(Uri.parse('https://wa.me/91$p?text=${Uri.encodeComponent(msg)}'));
+                  }),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () => _showContactSheet(listing),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), elevation: 0),
+                    child: Text('Details', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13)),
+                  ),
+                ],
+              ]),
+            ])),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _quickAction(IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.2))),
+        child: Icon(icon, size: 18, color: color),
       ),
     );
   }

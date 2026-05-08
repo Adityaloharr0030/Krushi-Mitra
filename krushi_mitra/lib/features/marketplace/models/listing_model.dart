@@ -44,28 +44,45 @@ class MarketplaceListing {
   });
 
   factory MarketplaceListing.fromJson(Map<String, dynamic> json) {
+    // Robust helper for parsing numbers safely
+    double parseDouble(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? 0.0;
+      return 0.0;
+    }
+
+    // Robust helper for parsing booleans safely
+    bool parseBool(dynamic v, bool fallback) {
+      if (v == null) return fallback;
+      if (v is bool) return v;
+      if (v is String) return v.toLowerCase() == 'true' || v == '1';
+      if (v is num) return v == 1;
+      return fallback;
+    }
+
     return MarketplaceListing(
-      id: json['id'] as String? ?? '',
-      sellerId: json['sellerId'] as String? ?? '',
-      farmerName: json['farmerName'] as String? ?? 'Unknown Farmer',
-      commodity: json['commodity'] as String? ?? '',
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
-      unit: json['unit'] as String? ?? 'Quintal',
-      pricePerUnit: (json['pricePerUnit'] as num?)?.toDouble() ?? 0,
-      quality: json['quality'] as String? ?? 'B',
-      location: json['location'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? '',
-      phoneNumber: json['phoneNumber'] as String?,
+      id: json['id']?.toString() ?? '',
+      sellerId: json['sellerId']?.toString() ?? '',
+      farmerName: json['farmerName']?.toString() ?? 'Unknown Farmer',
+      commodity: json['commodity']?.toString() ?? '',
+      quantity: parseDouble(json['quantity']),
+      unit: json['unit']?.toString() ?? 'Quintal',
+      pricePerUnit: parseDouble(json['pricePerUnit']),
+      quality: json['quality']?.toString() ?? 'B',
+      location: json['location']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      imageUrl: json['imageUrl']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString(),
       dateListed: json['dateListed'] is Timestamp
           ? (json['dateListed'] as Timestamp).toDate()
           : DateTime.tryParse(json['dateListed']?.toString() ?? '') ?? DateTime.now(),
-      isVerified: json['isVerified'] as bool? ?? false,
-      isSold: json['isSold'] as bool? ?? false,
-      isOrganic: json['isOrganic'] as bool? ?? false,
-      deliveryAvailable: json['deliveryAvailable'] as bool? ?? false,
-      minimumOrder: (json['minimumOrder'] as num?)?.toDouble() ?? 0,
-      isNegotiable: json['isNegotiable'] as bool? ?? true,
+      isVerified: parseBool(json['isVerified'], false),
+      isSold: parseBool(json['isSold'], false),
+      isOrganic: parseBool(json['isOrganic'], false),
+      deliveryAvailable: parseBool(json['deliveryAvailable'], false),
+      minimumOrder: parseDouble(json['minimumOrder']),
+      isNegotiable: parseBool(json['isNegotiable'], true),
     );
   }
 

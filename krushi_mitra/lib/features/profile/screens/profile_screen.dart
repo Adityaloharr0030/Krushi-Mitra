@@ -271,21 +271,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 16),
           
           _buildSwitchTile(
-            Icons.wb_sunny_rounded, 
+            Icons.thunderstorm_rounded, 
             'Weather & AI Alerts', 
             profile?.weatherAlerts ?? true, 
             (val) => _updatePreference(profile, 'weatherAlerts', val),
             subtitle: 'Spraying limits, extreme rain',
           ),
           _buildSwitchTile(
-            Icons.account_balance_rounded, 
+            Icons.gavel_rounded, 
             'Government Schemes', 
             profile?.schemeAlerts ?? true, 
             (val) => _updatePreference(profile, 'schemeAlerts', val),
             subtitle: 'New schemes & deadlines',
           ),
           _buildSwitchTile(
-            Icons.storefront_rounded, 
+            Icons.trending_up_rounded, 
             'Mandi Price Alerts', 
             profile?.priceAlerts ?? false, 
             (val) => _updatePreference(profile, 'priceAlerts', val),

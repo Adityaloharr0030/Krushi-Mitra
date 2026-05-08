@@ -404,51 +404,51 @@ class _StatCard extends StatelessWidget {
 class _FeatureGrid extends StatelessWidget {
   const _FeatureGrid();
 
-  static const _features = [
+  static const List<Map<String, dynamic>> _features = [
     {
-      'emoji': '🤖',
+      'icon': Icons.psychology_rounded,
       'title': 'AI Doctor',
       'subtitle': 'Diagnose crop',
       'gradient': 'green'
     },
     {
-      'emoji': '🏪',
+      'icon': Icons.storefront_rounded,
       'title': 'Marketplace',
       'subtitle': 'Sell Produce',
       'gradient': 'purple'
     },
     {
-      'emoji': '🧪',
+      'icon': Icons.science_rounded,
       'title': 'Soil Advisor',
       'subtitle': 'Fertilizer tip',
       'gradient': 'teal'
     },
     {
-      'emoji': '🌤️',
+      'icon': Icons.wb_sunny_rounded,
       'title': 'Weather',
       'subtitle': 'Live forecast',
       'gradient': 'blue'
     },
     {
-      'emoji': '💰',
+      'icon': Icons.trending_up_rounded,
       'title': 'Market',
       'subtitle': 'Mandi rates',
       'gradient': 'amber'
     },
     {
-      'emoji': '🏛️',
+      'icon': Icons.assured_workload_rounded,
       'title': 'Govt Schemes',
       'subtitle': 'Subsidies',
       'gradient': 'red'
     },
     {
-      'emoji': '🗓️',
+      'icon': Icons.calendar_month_rounded,
       'title': 'Calendar',
       'subtitle': 'Planning',
       'gradient': 'teal'
     },
     {
-      'emoji': '📔',
+      'icon': Icons.menu_book_rounded,
       'title': 'Farm Diary',
       'subtitle': 'Record spends',
       'gradient': 'green'
@@ -470,10 +470,10 @@ class _FeatureGrid extends StatelessWidget {
       itemBuilder: (context, i) {
         final f = _features[i];
         return _FeatureCard(
-          emoji: f['emoji']!,
-          title: f['title']!,
-          subtitle: f['subtitle']!,
-          gradient: _getGradient(f['gradient']!),
+          icon: f['icon'] as IconData,
+          title: f['title'] as String,
+          subtitle: f['subtitle'] as String,
+          gradient: _getGradient(f['gradient'] as String),
           onTap: () => _handleTap(context, i),
         );
       },
@@ -538,14 +538,14 @@ class _FeatureGrid extends StatelessWidget {
 }
 
 class _FeatureCard extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
   final LinearGradient gradient;
   final VoidCallback onTap;
 
   const _FeatureCard({
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
     required this.gradient,
@@ -574,12 +574,19 @@ class _FeatureCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                child: Icon(icon, color: Colors.white, size: 26),
               ),
               const Spacer(),
               Text(

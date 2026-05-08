@@ -303,7 +303,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
                           color: AppColors.primaryEmerald.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.account_balance_rounded, size: 32, color: AppColors.primaryEmerald),
+                        child: const Icon(Icons.assured_workload_rounded, size: 32, color: AppColors.primaryEmerald),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
