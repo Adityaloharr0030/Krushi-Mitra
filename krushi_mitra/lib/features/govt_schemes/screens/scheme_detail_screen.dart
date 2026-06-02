@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../../core/services/ai_service.dart';
@@ -22,22 +22,49 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
   bool _isAnalyzing = false;
 
   Future<void> _launchUrl(String urlString) async {
-    final url = Uri.parse(urlString);
+    final cleanUrlString = urlString.trim();
+    if (cleanUrlString.isEmpty) return;
+    
+    Uri? url;
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not launch link')),
-          );
-        }
+      url = Uri.parse(cleanUrlString);
+      if (!url.hasScheme) {
+        url = Uri.parse('https://$cleanUrlString');
       }
     } catch (e) {
+      debugPrint('Error parsing URL: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          const SnackBar(content: Text('Invalid URL link.')),
         );
+      }
+      return;
+    }
+
+    try {
+      bool launched = await launchUrl(url, mode: LaunchMode.platformDefault);
+      if (!launched) {
+        launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open link. Please try manually.')),
+        );
+      }
+    } catch (e) {
+      try {
+        final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+        if (!launched && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open link. Please try manually.')),
+          );
+        }
+      } catch (ex) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error opening link: $ex')),
+          );
+        }
       }
     }
   }

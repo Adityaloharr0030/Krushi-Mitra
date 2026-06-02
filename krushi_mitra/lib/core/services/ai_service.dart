@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
-import '../constants/api_constants.dart';
 import 'gemini_service.dart';
 import 'ai_knowledge_base.dart';
 import '../../data/models/smart_context_model.dart';
+import '../../data/models/scheme_model.dart';
+import '../../data/models/market_price_model.dart';
 
 class CropDiagnosis {
   final String cropName;
@@ -671,6 +672,168 @@ Respond in valid JSON only (no markdown):
     }
   }
 
+  // ─── AI FALLBACK FOR MANDI PRICES ───
+  Future<List<MarketPrice>> getAIMarketPrices({String? state, String? commodity}) async {
+    final resolvedState = state ?? 'Maharashtra';
+    final resolvedCommodity = commodity ?? 'Wheat';
+    final today = DateTime.now();
+    final dateStr = '${today.day.toString().padLeft(2, '0')}/${today.month.toString().padLeft(2, '0')}/${today.year}';
+
+    final prompt = '''You are a real-time mandi prices data engine for Indian agriculture.
+Current Date: $dateStr
+State: $resolvedState
+Target Commodity: $resolvedCommodity
+
+TASK: Generate 8 highly realistic Mandi price entries for different markets/districts in $resolvedState for the crop $resolvedCommodity. 
+Ensure:
+- The districts and markets are real, active locations in $resolvedState (e.g. for Maharashtra: Pune, Nashik, Latur, Nagpur, Amravati, Kolhapur, Satara, Solapur).
+- The variety corresponds to real local varieties (e.g. Lokwan/Sharbati for Wheat, Red/White for Onion, Hybrid/Local for Tomato, Yellow for Soyabean, Medium Staple for Cotton).
+- The min, max, and modal prices are aligned with current 2026 Indian market prices and MSP rates (e.g., Wheat modal price around ₹2400-2800 per quintal, Onion around ₹1000-1800, Soyabean around ₹4000-4800, Cotton around ₹6500-7500).
+- The prices should differ slightly from market to market. Modal price must be between min_price and max_price.
+
+Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
+[
+  {
+    "commodity": "$resolvedCommodity",
+    "variety": "Lokwan",
+    "state": "$resolvedState",
+    "district": "District Name",
+    "market": "Market Name",
+    "min_price": 2400.0,
+    "max_price": 2700.0,
+    "modal_price": 2550.0,
+    "arrival_date": "$dateStr"
+  }
+]''';
+
+    try {
+      return await _gemini.runWithRetry((model) async {
+        final response = await model.generateContent([Content.text(prompt)]);
+        final jsonStr = _extractJson(response.text ?? '[]');
+        final List list = json.decode(jsonStr);
+        return list.map((e) => MarketPrice.fromJson(e as Map<String, dynamic>)).toList();
+      });
+    } catch (e) {
+      debugPrint('AI Market Prices Error: $e');
+      return [];
+    }
+  }
+
+  // ─── AI GOVERNMENT SCHEMES FETCH ───
+  Future<List<Scheme>> getAIGovtSchemes(String language) async {
+    final langInst = _getLanguageInstruction(language);
+    final today = DateTime.now();
+    final prompt = '''You are an expert on Indian central and state government agricultural schemes.
+Current Year: 2026
+
+TASK: Generate a list of 8 official, real government schemes for farmers in India (e.g. PM-KISAN, PMFBY, KCC, Soil Health Card, PMKSY, PKVY, PMKMY, Subsidies for Tractors/Solar Pumps). 
+Ensure:
+- All schemes are real official schemes.
+- websiteLink must be the exact homepage portal URL (e.g., https://pmkisan.gov.in, https://pmfby.gov.in).
+- applyLink must be the direct, verified registration or application deep link for the scheme (e.g., https://pmkisan.gov.in/RegistrationFormNew.aspx, https://pmfby.gov.in/farmerRegistrationForm, https://soilhealth.dac.gov.in/farmer-registration). Do not use general homepages for applyLink; provide direct application URLs so farmers can apply immediately.
+- The howToApply guidelines, benefitAmount, eligibilityCriteria, requiredDocuments, and helplineNumber are accurate and current for 2026.
+- Generate unique IDs (e.g. "1", "2", "3", etc.).
+
+$langInst
+
+Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
+[
+  {
+    "id": "1",
+    "name": "PM-Kisan Samman Nidhi",
+    "description": "Income support of ₹6,000/- per year in three equal installments to all land holding farmer families.",
+    "ministryLogo": "https://pmkisan.gov.in/images/logo.png",
+    "deadline": "${today.add(const Duration(days: 30)).toIso8601String()}",
+    "benefitAmount": "₹6,000 / year",
+    "eligibilityCriteria": ["Small & marginal farmers", "Landholding citizens", "Not paying income tax"],
+    "requiredDocuments": ["Aadhaar Card", "Bank Passbook", "Land Ownership Details"],
+    "howToApply": "1. Visit pmkisan.gov.in\\n2. Click on New Farmer Registration\\n3. Enter Aadhaar and Bank details",
+    "websiteLink": "https://pmkisan.gov.in",
+    "applyLink": "https://pmkisan.gov.in",
+    "helplineNumber": "155261"
+  }
+]''';
+
+    try {
+      return await _gemini.runWithRetry((model) async {
+        final response = await model.generateContent([Content.text(prompt)]);
+        final jsonStr = _extractJson(response.text ?? '[]');
+        final List list = json.decode(jsonStr);
+        return list.map((e) => Scheme.fromJson(e as Map<String, dynamic>)).toList();
+      });
+    } catch (e) {
+      debugPrint('AI Govt Schemes Error: $e');
+      return [];
+    }
+  }
+
+  // ─── AI MARKETPLACE LISTINGS FETCH ───
+  Future<List<Map<String, dynamic>>> getAIMarketplaceListings({String? language}) async {
+    final today = DateTime.now();
+    final dateStr = today.toIso8601String();
+    final langInst = _getLanguageInstruction(language ?? 'en');
+
+    final prompt = '''You are a live agricultural marketplace data simulator.
+Current Date: $dateStr
+
+TASK: Generate 8 highly realistic direct-sale crop listings posted by farmers in Maharashtra, India.
+Ensure:
+- The farmer names, locations (districts/markets like Nashik, Pune, Latur, Nagpur, Kolhapur, Satara, Solapur, Amravati) are realistic.
+- The commodities are in high demand (e.g. Wheat, Rice, Onion, Tomato, Potato, Cotton, Soybean).
+- The quantities are typical (e.g., 20 to 300 Quintals, or 500 to 5000 Kg).
+- The price per unit aligns with actual market rates (e.g., Wheat ₹2300-2700/Quintal, Onion ₹1200-1600/Quintal, Cotton ₹6800-7500/Quintal, Tomato ₹15-30/Kg).
+- Quality grades: A+, A, B.
+- Use realistic description, phone number (10 digits starting with 9 or 8 or 7), and flags for isOrganic, deliveryAvailable, isNegotiable.
+- Generate unique IDs (e.g. "ai_list_1", "ai_list_2", etc.).
+- Image URLs: Use high-quality Unsplash agricultural/crop stock photo URLs to make it look premium (e.g., wheat, rice, onion, tomato, farm fields). Here are safe URLs you can use:
+  * Wheat: https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=500&auto=format&fit=crop
+  * Onion: https://images.unsplash.com/photo-1508747703725-719ae2c226e1?q=80&w=500&auto=format&fit=crop
+  * Tomato: https://images.unsplash.com/photo-1595855759920-86582396756a?q=80&w=500&auto=format&fit=crop
+  * Rice: https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=500&auto=format&fit=crop
+  * Potato: https://images.unsplash.com/photo-1518977676601-b53f82aba655?q=80&w=500&auto=format&fit=crop
+  * Soyabean: https://images.unsplash.com/photo-1599599810769-bcde5a160d32?q=80&w=500&auto=format&fit=crop
+  * Cotton: https://images.unsplash.com/photo-1594761053050-b112507d189f?q=80&w=500&auto=format&fit=crop
+
+$langInst
+
+Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
+[
+  {
+    "id": "ai_list_1",
+    "sellerId": "ai_seller_1",
+    "farmerName": "Ramesh Patil",
+    "commodity": "Wheat",
+    "quantity": 120.0,
+    "unit": "Quintal",
+    "pricePerUnit": 2450.0,
+    "quality": "A",
+    "location": "Nashik, Maharashtra",
+    "description": "Premium Lokwan wheat, well-dried and stored in dry conditions. Cleaned and graded, ready for immediate delivery.",
+    "imageUrl": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=500&auto=format&fit=crop",
+    "phoneNumber": "9876543210",
+    "dateListed": "$dateStr",
+    "isVerified": true,
+    "isSold": false,
+    "isOrganic": true,
+    "deliveryAvailable": true,
+    "minimumOrder": 20.0,
+    "isNegotiable": true
+  }
+]''';
+
+    try {
+      return await _gemini.runWithRetry((model) async {
+        final response = await model.generateContent([Content.text(prompt)]);
+        final jsonStr = _extractJson(response.text ?? '[]');
+        final List list = json.decode(jsonStr);
+        return list.map((e) => e as Map<String, dynamic>).toList();
+      });
+    } catch (e) {
+      debugPrint('AI Marketplace Listings Error: $e');
+      return [];
+    }
+  }
+
   // ─── HELPERS ───
   String _getLanguageInstruction(String language) {
     switch (language) {
@@ -689,9 +852,17 @@ Respond in valid JSON only (no markdown):
       final jsonMatch = RegExp(r'```(?:json)?\s*([\s\S]*?)```').firstMatch(cleaned);
       if (jsonMatch != null) cleaned = jsonMatch.group(1)!.trim();
     }
-    final start = cleaned.indexOf('{');
-    final end = cleaned.lastIndexOf('}');
-    if (start != -1 && end != -1) return cleaned.substring(start, end + 1);
+    
+    int startObj = cleaned.indexOf('{');
+    int startArr = cleaned.indexOf('[');
+    
+    if (startArr != -1 && (startObj == -1 || startArr < startObj)) {
+      int endArr = cleaned.lastIndexOf(']');
+      if (endArr != -1) return cleaned.substring(startArr, endArr + 1);
+    } else if (startObj != -1) {
+      int endObj = cleaned.lastIndexOf('}');
+      if (endObj != -1) return cleaned.substring(startObj, endObj + 1);
+    }
     return cleaned;
   }
 }

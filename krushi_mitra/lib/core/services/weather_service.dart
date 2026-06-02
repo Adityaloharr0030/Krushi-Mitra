@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
@@ -199,7 +198,13 @@ class WeatherService {
     ));
   }
 
-  String get _apiKey => dotenv.env['OPENWEATHER_KEY'] ?? '';
+  String get _apiKey {
+    try {
+      return dotenv.env['OPENWEATHER_KEY'] ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   Future<WeatherData> getWeatherByLocation(double lat, double lon, {bool forceRefresh = false}) async {
     final cached = forceRefresh ? null : await _getCachedWeather();

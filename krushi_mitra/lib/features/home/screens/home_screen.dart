@@ -17,6 +17,7 @@ import '../../soil_advisor/screens/soil_input_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
 import '../../farm_diary/screens/farm_diary_screen.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -282,7 +283,12 @@ class _QuickStatsRow extends ConsumerWidget {
                 emoji: '🌱',
                 value: '${p?.landSize.toStringAsFixed(1) ?? '—'} ac',
                 label: 'Farm Size',
-                isGood: true),
+                isGood: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                ),
+            ),
             loading: () =>
                 const _StatCard(emoji: '🌱', value: '...', label: 'Farm Size'),
             error: (_, __) =>
@@ -297,7 +303,12 @@ class _QuickStatsRow extends ConsumerWidget {
                 value:
                     w.rainChance > 20 ? '${w.rainChance.round()}%' : 'No Rain',
                 label: 'Next Rain',
-                isGood: w.rainChance < 30),
+                isGood: w.rainChance < 30,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WeatherScreen()),
+                ),
+            ),
             loading: () =>
                 const _StatCard(emoji: '🌧️', value: '...', label: 'Next Rain'),
             error: (_, __) =>
@@ -327,6 +338,10 @@ class _QuickStatsRow extends ConsumerWidget {
                 value: '₹${targetPrice.modalPrice.round()}',
                 label: '${targetPrice.commodity}/qtl',
                 isGood: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MandiPricesScreen()),
+                ),
               );
             },
             loading: () =>
@@ -345,57 +360,62 @@ class _StatCard extends StatelessWidget {
   final String value;
   final String label;
   final bool? isGood;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.emoji,
     required this.value,
     required this.label,
     this.isGood,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceObsidian,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceObsidian,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: (isGood == true
-                      ? AppColors.success
-                      : AppColors.primaryEmerald)
-                  .withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (isGood == true
+                        ? AppColors.success
+                        : AppColors.primaryEmerald)
+                    .withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Text(emoji, style: const TextStyle(fontSize: 18)),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 18)),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color:
-                  isGood == true ? AppColors.success : AppColors.primaryEmerald,
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color:
+                    isGood == true ? AppColors.success : AppColors.primaryEmerald,
+              ),
             ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary),
-          ),
-        ],
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }

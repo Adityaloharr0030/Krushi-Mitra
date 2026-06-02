@@ -28,19 +28,34 @@ class Scheme {
   });
 
   factory Scheme.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDeadline;
+    final deadlineVal = json['deadline'];
+    if (deadlineVal is String) {
+      final parsed = DateTime.tryParse(deadlineVal);
+      if (parsed != null) {
+        parsedDeadline = parsed;
+      } else {
+        parsedDeadline = DateTime.now().add(const Duration(days: 365));
+      }
+    } else if (deadlineVal is int) {
+      parsedDeadline = DateTime.fromMillisecondsSinceEpoch(deadlineVal);
+    } else {
+      parsedDeadline = DateTime.now().add(const Duration(days: 30));
+    }
+
     return Scheme(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      ministryLogo: json['ministryLogo'] as String,
-      deadline: DateTime.parse(json['deadline'] as String),
-      benefitAmount: json['benefitAmount'] as String,
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      ministryLogo: (json['ministryLogo'] ?? '').toString(),
+      deadline: parsedDeadline,
+      benefitAmount: (json['benefitAmount'] ?? '').toString(),
       eligibilityCriteria: List<String>.from(json['eligibilityCriteria'] ?? []),
       requiredDocuments: List<String>.from(json['requiredDocuments'] ?? []),
-      howToApply: json['howToApply'] as String,
-      websiteLink: json['websiteLink'] as String,
-      applyLink: json['applyLink'] ?? (json['websiteLink'] as String),
-      helplineNumber: json['helplineNumber'] as String,
+      howToApply: (json['howToApply'] ?? '').toString(),
+      websiteLink: (json['websiteLink'] ?? '').toString(),
+      applyLink: (json['applyLink'] ?? json['websiteLink'] ?? '').toString(),
+      helplineNumber: (json['helplineNumber'] ?? '').toString(),
     );
   }
 

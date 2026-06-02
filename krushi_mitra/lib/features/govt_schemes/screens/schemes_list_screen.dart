@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/ai_service.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import 'scheme_detail_screen.dart';
 import '../../../data/models/scheme_model.dart';
@@ -30,7 +33,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Bank Passbook', 'Land Ownership Details'],
       howToApply: '1. Visit pmkisan.gov.in\n2. Click on New Farmer Registration\n3. Enter Aadhaar and Bank details',
       websiteLink: 'https://pmkisan.gov.in',
-      applyLink: 'https://pmkisan.gov.in/RegistrationForm.aspx',
+      applyLink: 'https://pmkisan.gov.in',
       helplineNumber: '155261',
     ),
     Scheme(
@@ -86,7 +89,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Drip/Sprinkler Invoice', 'Land Map'],
       howToApply: 'Apply on the State Agriculture Department portal or via District Office.',
       websiteLink: 'https://pmksy.gov.in',
-      applyLink: 'https://pmksy.gov.in/registration',
+      applyLink: 'https://www.myscheme.gov.in/schemes/pmksy',
       helplineNumber: '1800-180-1551',
     ),
     Scheme(
@@ -100,7 +103,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Land Map', 'Group Resolution'],
       howToApply: 'Register on the Jaivikkheti portal or via local Regional Council.',
       websiteLink: 'https://www.jaivikkheti.in',
-      applyLink: 'https://www.jaivikkheti.in/farmer-registration',
+      applyLink: 'https://www.jaivikkheti.in',
       helplineNumber: '0120-2764906',
     ),
     Scheme(
@@ -114,10 +117,106 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       requiredDocuments: ['Aadhaar Card', 'Savings Bank Account', 'Kisan Card'],
       howToApply: 'Enroll at nearest Common Service Center (CSC) or self-enroll on maandhan.in',
       websiteLink: 'https://maandhan.in',
-      applyLink: 'https://maandhan.in/scheme/pmkmy',
+      applyLink: 'https://pmkmy.gov.in',
       helplineNumber: '1800-267-6888',
     ),
   ];
+
+  List<Scheme> _schemes = [];
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPersistedSchemes();
+  }
+
+  Future<void> _loadPersistedSchemes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedData = prefs.getString('saved_govt_schemes');
+      if (savedData != null) {
+        final List decoded = json.decode(savedData);
+        setState(() {
+          _schemes = decoded.map((e) => Scheme.fromJson(e as Map<String, dynamic>)).toList();
+        });
+        
+        final lastSyncStr = prefs.getString('last_schemes_sync_time');
+        if (lastSyncStr != null) {
+          final lastSync = DateTime.parse(lastSyncStr);
+          if (DateTime.now().difference(lastSync).inHours >= 24) {
+            _syncSchemesViaAI(quiet: true);
+          }
+        } else {
+          _syncSchemesViaAI(quiet: true);
+        }
+      } else {
+        setState(() {
+          _schemes = List.from(_originalSchemes);
+        });
+        _syncSchemesViaAI(quiet: true);
+      }
+    } catch (e) {
+      setState(() {
+        _schemes = List.from(_originalSchemes);
+      });
+    }
+  }
+
+  Future<void> _saveSchemes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = _schemes.map((e) => e.toJson()).toList();
+      await prefs.setString('saved_govt_schemes', json.encode(jsonList));
+    } catch (_) {}
+  }
+
+  Future<void> _syncSchemesViaAI({bool quiet = false}) async {
+    if (!quiet) setState(() => _isSyncing = true);
+    try {
+      final aiSchemes = await AIService().getAIGovtSchemes('en');
+      if (aiSchemes.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            final Map<String, Scheme> uniqueSchemes = {};
+            for (var s in _originalSchemes) {
+              uniqueSchemes[s.name.toLowerCase()] = s;
+            }
+            for (var s in aiSchemes) {
+              uniqueSchemes[s.name.toLowerCase()] = s;
+            }
+            _schemes = uniqueSchemes.values.toList();
+          });
+        }
+        await _saveSchemes();
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_schemes_sync_time', DateTime.now().toIso8601String());
+        
+        if (!quiet && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✨ Schemes synced and updated successfully via AI!')),
+          );
+        }
+      } else {
+        if (!quiet && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not fetch new schemes. Using cached version.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (!quiet && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error syncing: $e')),
+        );
+      }
+    } finally {
+      if (mounted && !quiet) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +224,18 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Original Govt Schemes',
+          'Official Govt Schemes',
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: _isSyncing 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : const Icon(Icons.smart_toy_rounded, color: Colors.white),
+            tooltip: 'Sync Schemes via AI',
+            onPressed: _isSyncing ? null : _syncSchemesViaAI,
+          ),
+        ],
         elevation: 0,
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
@@ -217,7 +325,7 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
   }
 
   Widget _buildSchemeList() {
-    final filteredSchemes = _originalSchemes.where((scheme) {
+    final filteredSchemes = _schemes.where((scheme) {
       final matchesSearch = scheme.name.toLowerCase().contains(_searchQuery) ||
           scheme.description.toLowerCase().contains(_searchQuery);
       
@@ -238,143 +346,160 @@ class _SchemesListScreenState extends State<SchemesListScreen> {
       return matchesSearch && matchesFilter;
     }).toList();
 
-    if (filteredSchemes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_rounded, size: 64, color: AppColors.outlineVariant),
-            const SizedBox(height: 16),
-            Text(
-              'No schemes found',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: filteredSchemes.length,
-      itemBuilder: (context, index) {
-        final scheme = filteredSchemes[index];
-        final daysLeft = scheme.deadline.difference(DateTime.now()).inDays;
-        
-        return Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceWhite,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(28),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SchemeDetailScreen(scheme: scheme),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+    return RefreshIndicator(
+      color: AppColors.primaryEmerald,
+      onRefresh: () => _syncSchemesViaAI(),
+      child: filteredSchemes.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryEmerald.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
+                      Icon(Icons.search_off_rounded, size: 64, color: AppColors.outlineVariant),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No schemes found',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
                         ),
-                        child: const Icon(Icons.assured_workload_rounded, size: 32, color: AppColors.primaryEmerald),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              scheme.name,
-                              style: GoogleFonts.outfit(
-                                fontSize: 18, 
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              scheme.benefitAmount,
-                              style: GoogleFonts.plusJakartaSans(
-                                color: AppColors.primaryEmerald,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'Pull down to refresh and fetch latest schemes',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: AppColors.textHint,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    scheme.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13, 
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              itemCount: filteredSchemes.length,
+              itemBuilder: (context, index) {
+                final scheme = filteredSchemes[index];
+                final daysLeft = scheme.deadline.difference(DateTime.now()).inDays;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(28),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SchemeDetailScreen(scheme: scheme),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(Icons.assured_workload_rounded, size: 32, color: AppColors.primaryEmerald),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      scheme.name,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 18, 
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      scheme.benefitAmount,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: AppColors.primaryEmerald,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            scheme.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13, 
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: (daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: (daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald).withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Deadline: $daysLeft days left',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                              Icon(Icons.arrow_forward_rounded, size: 20, color: AppColors.primaryEmerald.withValues(alpha: 0.5)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: (daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: (daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald).withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Text(
-                          'Deadline: $daysLeft days left',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: daysLeft <= 7 ? AppColors.error : AppColors.primaryEmerald,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_rounded, size: 20, color: AppColors.primaryEmerald.withValues(alpha: 0.5)),
-                    ],
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-          ),
-        );
-      },
     );
   }
 }

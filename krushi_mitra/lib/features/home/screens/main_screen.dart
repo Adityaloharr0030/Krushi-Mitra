@@ -134,7 +134,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             _buildNavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home'),
             _buildNavDestination(Icons.psychology_outlined, Icons.psychology_rounded, 'AI Doctor'),
             _buildNavDestination(Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, 'Weather'),
-            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, 'Market'),
+            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, 'Marketplace'),
             _buildNavDestination(Icons.gavel_outlined, Icons.gavel_rounded, 'Schemes'),
             _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
           ],

@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../../data/models/market_price_model.dart';
+import 'ai_service.dart';
 
 class MarketService {
   static final MarketService _instance = MarketService._internal();
@@ -26,18 +27,45 @@ class MarketService {
     String? district,
     String? commodity,
     bool forceRefresh = false,
+    bool forceAI = false,
   }) async {
-    final apiKey = dotenv.env['AGMARKET_KEY'] ?? '';
-    
-    // 1. Load Cache (if not forcing refresh)
-    final List<MarketPrice> cached = forceRefresh ? [] : await _getCachedMarket();
-
-    if (apiKey.isEmpty) {
-      if (cached.isNotEmpty) return cached;
-      return await _getOfflineMarketData(state: state, commodity: commodity);
-    }
-
+    debugPrint('getMarketPrices: state=$state, district=$district, commodity=$commodity, forceRefresh=$forceRefresh, forceAI=$forceAI');
+    List<MarketPrice> cached = [];
     try {
+      // 1. Load Cache (if not forcing refresh and not forcing AI)
+      cached = (forceRefresh || forceAI) ? [] : await _getCachedMarket();
+      debugPrint('getMarketPrices: cached length = ${cached.length}');
+
+      if (forceAI) {
+        debugPrint('getMarketPrices: Force AI requested. Fetching from Gemini...');
+        final aiPrices = await AIService().getAIMarketPrices(state: state, commodity: commodity);
+        debugPrint('getMarketPrices: Force AI fetched: ${aiPrices.length} records');
+        if (aiPrices.isNotEmpty) {
+          _cacheMarket(aiPrices);
+          return aiPrices;
+        }
+        return await _getOfflineMarketData(state: state, commodity: commodity);
+      }
+
+      String apiKey = '';
+      try {
+        apiKey = dotenv.env['AGMARKET_KEY'] ?? '';
+      } catch (e) {
+        debugPrint('getMarketPrices: Dotenv not initialized: $e');
+      }
+      debugPrint('getMarketPrices: apiKey loaded length = ${apiKey.length}');
+
+      if (apiKey.isEmpty) {
+        debugPrint('getMarketPrices: apiKey is empty! Trying cache or AI fallback...');
+        if (cached.isNotEmpty) return cached;
+        final aiPrices = await AIService().getAIMarketPrices(state: state, commodity: commodity);
+        debugPrint('getMarketPrices: aiPrices fallback length = ${aiPrices.length}');
+        if (aiPrices.isNotEmpty) return aiPrices;
+        final offline = await _getOfflineMarketData(state: state, commodity: commodity);
+        debugPrint('getMarketPrices: offline fallback length = ${offline.length}');
+        return offline;
+      }
+
       const String resourceId = ApiConstants.agmarknetResource;
       final Map<String, dynamic> params = {
         'api-key': apiKey,
@@ -49,28 +77,51 @@ class MarketService {
       if (district != null && district.isNotEmpty) params['filters[district]'] = district;
       if (commodity != null && commodity.isNotEmpty) params['filters[commodity]'] = commodity;
 
+      final url = 'https://api.data.gov.in/resource/$resourceId';
+      debugPrint('getMarketPrices: GET $url params=$params');
       final response = await _dio.get(
-        'https://api.data.gov.in/resource/$resourceId',
+        url,
         queryParameters: params,
       );
 
+      debugPrint('getMarketPrices: status=${response.statusCode}');
       if (response.statusCode == 200) {
-        final List records = response.data['records'] ?? [];
+        dynamic data = response.data;
+        if (data is String) {
+          data = json.decode(data);
+        }
+        final List records = data['records'] ?? [];
+        debugPrint('getMarketPrices: records length = ${records.length}');
         if (records.isEmpty) {
           if (cached.isNotEmpty) return cached;
-          return await _getOfflineMarketData(state: state, commodity: commodity);
+          final aiPrices = await AIService().getAIMarketPrices(state: state, commodity: commodity);
+          debugPrint('getMarketPrices: records empty, aiPrices fallback length = ${aiPrices.length}');
+          if (aiPrices.isNotEmpty) return aiPrices;
+          final offline = await _getOfflineMarketData(state: state, commodity: commodity);
+          debugPrint('getMarketPrices: records empty, offline fallback length = ${offline.length}');
+          return offline;
         }
         final result = records.map((r) => MarketPrice.fromJson(r)).toList();
         _cacheMarket(result);
+        debugPrint('getMarketPrices: returning API result length = ${result.length}');
         return result;
       }
       
+      debugPrint('getMarketPrices: non-200 response, trying cache/AI fallback...');
       if (cached.isNotEmpty) return cached;
-      return await _getOfflineMarketData(state: state, commodity: commodity);
+      final aiPrices = await AIService().getAIMarketPrices(state: state, commodity: commodity);
+      if (aiPrices.isNotEmpty) return aiPrices;
+      final offline = await _getOfflineMarketData(state: state, commodity: commodity);
+      return offline;
     } catch (e) {
-      debugPrint('Market API Error: $e. Using cache or offline data.');
+      debugPrint('getMarketPrices: Market API Error: $e. Using cache or AI fallback.');
       if (cached.isNotEmpty) return cached;
-      return await _getOfflineMarketData(state: state, commodity: commodity);
+      final aiPrices = await AIService().getAIMarketPrices(state: state, commodity: commodity);
+      debugPrint('getMarketPrices: error, aiPrices fallback length = ${aiPrices.length}');
+      if (aiPrices.isNotEmpty) return aiPrices;
+      final offline = await _getOfflineMarketData(state: state, commodity: commodity);
+      debugPrint('getMarketPrices: error, offline fallback length = ${offline.length}');
+      return offline;
     }
   }
 
@@ -120,7 +171,11 @@ class MarketService {
 
     // Filter by commodity if specified
     if (commodity != null && commodity.isNotEmpty) {
-      final filtered = allPrices.where((p) => p.commodity.toLowerCase() == commodity.toLowerCase()).toList();
+      final filtered = allPrices.where((p) {
+        final pComm = p.commodity.toLowerCase();
+        final cComm = commodity.toLowerCase();
+        return pComm == cComm || pComm.contains(cComm) || cComm.contains(pComm);
+      }).toList();
       return filtered.isNotEmpty ? filtered : allPrices.take(5).toList();
     }
 

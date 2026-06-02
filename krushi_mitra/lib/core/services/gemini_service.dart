@@ -1,9 +1,6 @@
-import 'dart:io';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import '../constants/api_constants.dart';
 
 class GeminiService {
   static final GeminiService _instance = GeminiService._internal();
@@ -26,11 +23,15 @@ class GeminiService {
   
   void initialize() {
     _apiKeys.clear();
-    for (int i = 1; i <= 5; i++) {
-      final key = dotenv.env['GEMINI_KEY_$i'];
-      if (key != null && key.isNotEmpty && !key.contains('YOUR_') && key.length > 20) {
-        _apiKeys.add(key.trim());
+    try {
+      for (int i = 1; i <= 5; i++) {
+        final key = dotenv.env['GEMINI_KEY_$i'];
+        if (key != null && key.isNotEmpty && !key.contains('YOUR_') && key.length > 20) {
+          _apiKeys.add(key.trim());
+        }
       }
+    } catch (e) {
+      debugPrint('GeminiService: Dotenv is not initialized: $e');
     }
     debugPrint('GeminiService: Initialized with ${_apiKeys.length} valid keys');
     if (_apiKeys.isEmpty) {
@@ -84,12 +85,6 @@ class GeminiService {
     
     while (attempts < retries) {
       try {
-        // Quick connectivity check before making the call
-        final connectivityResult = await Connectivity().checkConnectivity();
-        if (connectivityResult.contains(ConnectivityResult.none)) {
-          throw const SocketException('No internet connection detected.');
-        }
-
         final model = getModel(systemPrompt: systemPrompt);
         debugPrint('GeminiService: Running task with model: $_currentModel (Key Index: $_currentKeyIndex, Attempt: ${attempts + 1})');
         return await task(model);
