@@ -151,7 +151,7 @@ class AuthGate extends ConsumerWidget {
             return const MainScreen();
           },
           loading: () => const SplashScreen(),
-          error: (e, st) => const ProfileSetupScreen(),
+          error: (e, st) => const MainScreen(),
         );
       },
       loading: () => const SplashScreen(),

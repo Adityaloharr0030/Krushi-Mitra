@@ -36,7 +36,7 @@ class DatabaseService {
           return Farmer.fromJson(cachedDoc.data()!);
         }
       } catch (_) {}
-      return null;
+      rethrow;
     }
   }
 

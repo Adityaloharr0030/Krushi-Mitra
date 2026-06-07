@@ -101,7 +101,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       String? photoUrl = existingProfile?.photoUrl ?? user.photoURL;
 
       if (_imageFile != null) {
-        photoUrl = await _storage.uploadProfilePic(user.uid, _imageFile!);
+        try {
+          photoUrl = await _storage.uploadProfilePic(user.uid, _imageFile!);
+        } catch (e) {
+          debugPrint("Failed to upload profile picture: $e");
+        }
       }
 
       final farmer = Farmer(
@@ -117,11 +121,95 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         irrigationSource: _selectedIrrigation,
       );
 
-      await ref.read(profileActionProvider.notifier).saveProfile(farmer);
-
-      if (mounted) {
-        setState(() => _isUploading = false);
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+      try {
+        await ref.read(profileActionProvider.notifier).saveProfile(farmer);
+        if (mounted) {
+          setState(() => _isUploading = false);
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isUploading = false);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Save Failed',
+                      style: GoogleFonts.outfit(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: [
+                    Text(
+                      'We couldn\'t save your profile to Firebase Firestore.',
+                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.outline.withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        e.toString(),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: AppColors.error,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Troubleshooting steps:',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '1. Ensure you have an active internet connection.\n'
+                      '2. Verify Firestore database is created in the Firebase Console.\n'
+                      '3. Check Firestore rules (allow read, write if auth != null).',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'OK',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.primaryEmerald,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required details')));
