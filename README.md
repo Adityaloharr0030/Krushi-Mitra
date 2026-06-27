@@ -185,6 +185,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 **Aditya Lohar**  
 GitHub: [@Adityaloharr0030](https://github.com/Adityaloharr0030)
+
 **Hitesh More**
 GitHub: [@hiteshmore3636](https://github.com/hiteshmore3636)
 
