@@ -43,6 +43,47 @@
 
 ---
 
+## 💻 Krushi Mitra Pro Web Companion
+
+We have built a fully functional React + Vite web companion for the Krushi Mitra Pro application under the same **Celestial Harvest** dark theme and design system. 
+
+### 🌟 Web Features
+- **All Core Mobile App Features:** AI Crop Doctor, AI Chatbot, Live Mandi Prices, Weather Advisories, Govt Schemes directory, Soil Health recommendations, Input Calculators, Crop Calendar schedulers, Community forum feed, and Crop Marketplace.
+- **Quick Indian Languages Toggle:** Translate the entire UI instantly from the sidebar dropdown or mobile top bar into 8 languages: **English, Hindi (हिंदी), Marathi (मराठी), Gujarati (ગુજરાતી), Telugu (తెలుగు), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), and Bengali (বাংলা)**.
+- **Direct APK Download:** Download the latest mobile app build directly from the website's sidebar button.
+
+### 🚀 Getting Started (Web)
+
+1. **Navigate to the website directory**
+   ```bash
+   cd website
+   ```
+
+2. **Install web dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment keys (Optional)**
+   Create a `.env` file in the `website/` root directory:
+   ```env
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   VITE_OPENWEATHER_API_KEY=your_openweather_key
+   ```
+   *Note: If no API keys are supplied, the website operates on high-fidelity offline expert simulation systems, ensuring no crashes.*
+
+4. **Launch development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+---
+
 ## 🏗️ Project Architecture
 
 ```
