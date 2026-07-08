@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/screens/main_screen.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/farmer_model.dart';
-import '../../../../core/services/storage_service.dart';
-import '../../../../shared/widgets/loading_widget.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../shared/widgets/loading_widget.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
